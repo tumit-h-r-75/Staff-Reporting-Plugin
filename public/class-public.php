@@ -186,6 +186,22 @@ class Basmah_Staff_Reports_Public {
         <div class="bsr-report-form">
             <h2>Submit Daily Work Report</h2>
             
+            <?php if (isset($_GET['report_submitted']) && $_GET['report_submitted'] == 1): ?>
+                <div class="notification-popup" style="border-left: 4px solid #48bb78; background: #c6f6d5; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                    <p style="margin: 0; font-size: 1.05rem; font-weight: 600; color: #276749;">
+                        ✅ Report submitted successfully! Your work is waiting for admin check.
+                    </p>
+                </div>
+            <?php endif; ?>
+            
+            <?php if (isset($_GET['duplicate_report']) && $_GET['duplicate_report'] == 1): ?>
+                <div class="notification-popup" style="border-left: 4px solid #f56565; background: #fed7d7; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                    <p style="margin: 0; font-size: 1.05rem; font-weight: 600; color: #c53030;">
+                        ⚠️ You have already submitted a report for today!
+                    </p>
+                </div>
+            <?php endif; ?>
+            
             <?php if ($existing_report && $report): ?>
                 <div class="notification-popup" style="border-left: 4px solid <?php echo $report['status'] == 'approved' ? '#48bb78' : ($report['status'] == 'rejected' ? '#f56565' : '#ed8936'); ?>; background: <?php echo $report['status'] == 'approved' ? '#c6f6d5' : ($report['status'] == 'rejected' ? '#fed7d7' : '#feebc8'); ?>; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
                     <p style="margin: 0; font-size: 1.05rem; font-weight: 600; color: <?php echo $report['status'] == 'approved' ? '#276749' : ($report['status'] == 'rejected' ? '#c53030' : '#c05621'); ?>;">
@@ -337,14 +353,21 @@ class Basmah_Staff_Reports_Public {
         
         $sanitized_tasks = array();
         foreach ($tasks as $task) {
-            $sanitized_tasks[] = array(
+            $task_data = array(
                 'task_category' => sanitize_text_field($task['task_category']),
                 'task_description' => sanitize_textarea_field($task['task_description']),
                 'status' => sanitize_text_field($task['status']),
-                'next_action' => sanitize_textarea_field($task['next_action']),
-                'manager_assigned_task' => sanitize_textarea_field($task['manager_assigned_task']),
-                'additional_notes' => sanitize_textarea_field($task['additional_notes'])
+                'next_action' => sanitize_textarea_field($task['next_action'])
             );
+            
+            if (!empty($task['manager_assigned_task'])) {
+                $task_data['manager_assigned_task'] = sanitize_textarea_field($task['manager_assigned_task']);
+            }
+            if (!empty($task['additional_notes'])) {
+                $task_data['additional_notes'] = sanitize_textarea_field($task['additional_notes']);
+            }
+            
+            $sanitized_tasks[] = $task_data;
         }
 
         $existing_report = Basmah_Staff_Reports_Reports::report_exists($user_id, $report_date);
