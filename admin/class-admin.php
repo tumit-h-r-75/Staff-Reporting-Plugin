@@ -206,6 +206,8 @@ class Basmah_Staff_Reports_Admin {
     }
     
     private function handle_delete_holiday() {
+        check_admin_referer('bsr_delete_holiday');
+
         $id = intval($_GET['bsr_delete_holiday']);
         Basmah_Staff_Reports_Working_Days::delete_day($id);
         
@@ -226,6 +228,13 @@ class Basmah_Staff_Reports_Admin {
         
         if (isset($_GET['date_to']) && !empty($_GET['date_to'])) {
             $args['date_to'] = sanitize_text_field($_GET['date_to']);
+        }
+
+        if (isset($_GET['role']) && !empty($_GET['role'])) {
+            $role = sanitize_text_field($_GET['role']);
+            if (in_array($role, array('basmah_staff', 'basmah_manager'), true)) {
+                $args['role'] = $role;
+            }
         }
         
         $reports = Basmah_Staff_Reports_Reports::get_reports($args);
@@ -263,6 +272,8 @@ class Basmah_Staff_Reports_Admin {
     }
     
     private function handle_delete_report() {
+        check_admin_referer('bsr_delete_report');
+
         $report_id = intval($_GET['bsr_delete_report']);
         Basmah_Staff_Reports_Reports::delete_report($report_id);
         wp_redirect(add_query_arg('report_deleted', '1', admin_url('admin.php?page=bsr-all-reports')));
@@ -328,6 +339,13 @@ class Basmah_Staff_Reports_Admin {
         
         if (isset($_GET['date_to']) && !empty($_GET['date_to'])) {
             $args['date_to'] = sanitize_text_field($_GET['date_to']);
+        }
+
+        if (isset($_GET['role']) && !empty($_GET['role'])) {
+            $role = sanitize_text_field($_GET['role']);
+            if (in_array($role, array('basmah_staff', 'basmah_manager'), true)) {
+                $args['role'] = $role;
+            }
         }
         
         $reports = Basmah_Staff_Reports_Reports::get_reports($args);

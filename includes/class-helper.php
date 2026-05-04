@@ -5,6 +5,6 @@ class Basmah_Staff_Reports_Helper {
     }
     
     public static function get_staff_members() {
-        return get_users(array('role' => 'bsr_staff'));
+        return get_users(array('role' => 'basmah_staff'));
     }
 }

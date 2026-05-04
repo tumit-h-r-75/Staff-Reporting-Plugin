@@ -28,6 +28,7 @@ require_once BASMAH_STAFF_REPORTS_PLUGIN_DIR . 'includes/class-salary.php';
 require_once BASMAH_STAFF_REPORTS_PLUGIN_DIR . 'includes/class-working-days.php';
 require_once BASMAH_STAFF_REPORTS_PLUGIN_DIR . 'includes/class-emails.php';
 require_once BASMAH_STAFF_REPORTS_PLUGIN_DIR . 'includes/class-helper.php';
+require_once BASMAH_STAFF_REPORTS_PLUGIN_DIR . 'includes/class-security.php';
 
 if (is_admin()) {
     require_once BASMAH_STAFF_REPORTS_PLUGIN_DIR . 'admin/class-admin.php';

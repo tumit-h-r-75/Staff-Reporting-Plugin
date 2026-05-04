@@ -94,7 +94,7 @@
                                     <td><?php echo esc_html(date('F j, Y', strtotime($day['work_date']))); ?></td>
                                     <td><?php echo esc_html($day['holiday_name']); ?></td>
                                     <td>
-                                        <a href="<?php echo add_query_arg(array('bsr_delete_holiday' => $day['id'])); ?>" class="button button-small" style="color: #c53030; border-color: #c53030;">Remove</a>
+                                        <a href="<?php echo esc_url(wp_nonce_url(add_query_arg(array('bsr_delete_holiday' => $day['id'])), 'bsr_delete_holiday')); ?>" class="button button-small" style="color: #c53030; border-color: #c53030;">Remove</a>
                                     </td>
                                 </tr>
                             <?php endif; ?>

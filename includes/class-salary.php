@@ -41,6 +41,8 @@ class Basmah_Staff_Reports_Salary {
         global $wpdb;
         $table_name = $wpdb->prefix . 'staff_salary_settings';
         
+        $data['working_days_per_month'] = max(1, intval($data['working_days_per_month']));
+        $data['monthly_salary'] = max(0, floatval($data['monthly_salary']));
         $data['daily_rate'] = round($data['monthly_salary'] / $data['working_days_per_month'], 2);
         $data['updated_at'] = current_time('mysql');
         
@@ -71,7 +73,8 @@ class Basmah_Staff_Reports_Salary {
         
         $approved_days = 0;
         $rejected_days = 0;
-        $submitted_days = count($reports);
+        $working_day_lookup = array_fill_keys(Basmah_Staff_Reports_Working_Days::get_working_days($month, $year), true);
+        $submitted_working_days = array();
         
         foreach ($reports as $report) {
             if ($report['status'] == 'approved') {
@@ -79,12 +82,18 @@ class Basmah_Staff_Reports_Salary {
             } elseif ($report['status'] == 'rejected') {
                 $rejected_days++;
             }
+
+            if (isset($working_day_lookup[$report['report_date']])) {
+                $submitted_working_days[$report['report_date']] = true;
+            }
         }
+
+        $submitted_days = count($submitted_working_days);
         
         $daily_rate = $settings['daily_rate'];
         $monthly_salary = $settings['monthly_salary'];
         
-        $missing_days = max(0, $working_days - $approved_days);
+        $missing_days = max(0, $working_days - $submitted_days);
         $total_deduction = $missing_days * $daily_rate;
         $net_salary = max(0, $monthly_salary - $total_deduction);
         
