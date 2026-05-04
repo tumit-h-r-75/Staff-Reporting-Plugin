@@ -86,12 +86,26 @@ class Basmah_Staff_Reports_Admin {
         $table_name = $wpdb->prefix . 'staff_reports';
         $users_table = $wpdb->prefix . 'users';
         
-        $reports = $wpdb->get_results("
-            SELECT r.*, u.display_name, u.user_email
-            FROM $table_name r
-            JOIN $users_table u ON r.user_id = u.ID
-            ORDER BY r.report_date DESC
-        ", ARRAY_A);
+        $current_user = wp_get_current_user();
+        $user_id = $current_user->ID;
+        $can_manage = current_user_can('manage_options') || current_user_can('basmah_view_all_reports');
+        
+        if ($can_manage) {
+            $reports = $wpdb->get_results("
+                SELECT r.*, u.display_name, u.user_email
+                FROM $table_name r
+                JOIN $users_table u ON r.user_id = u.ID
+                ORDER BY r.report_date DESC
+            ", ARRAY_A);
+        } else {
+            $reports = $wpdb->get_results($wpdb->prepare("
+                SELECT r.*, u.display_name, u.user_email
+                FROM $table_name r
+                JOIN $users_table u ON r.user_id = u.ID
+                WHERE r.user_id = %d
+                ORDER BY r.report_date DESC
+            ", $user_id), ARRAY_A);
+        }
         
         require_once BASMAH_STAFF_REPORTS_PLUGIN_DIR . 'admin/views/all-reports.php';
     }
@@ -120,6 +134,14 @@ class Basmah_Staff_Reports_Admin {
             return;
         }
         
+        $current_user = wp_get_current_user();
+        $can_manage = current_user_can('manage_options') || current_user_can('basmah_view_all_reports');
+        
+        if (!$can_manage && $report['user_id'] != $current_user->ID) {
+            echo '<div class="wrap"><h1>Report Details</h1><p>You do not have permission to view this report.</p></div>';
+            return;
+        }
+        
         require_once BASMAH_STAFF_REPORTS_PLUGIN_DIR . 'admin/views/single-report.php';
     }
     
@@ -128,7 +150,8 @@ class Basmah_Staff_Reports_Admin {
             return;
         }
         
-        if (!current_user_can('manage_options')) {
+        $can_manage = current_user_can('manage_options') || current_user_can('basmah_manage_salaries') || current_user_can('basmah_edit_reports');
+        if (!$can_manage) {
             return;
         }
         
