@@ -1,5 +1,5 @@
 === Bassmah Staff Reports ===
-Contributors: bassmah
+Contributors: Tumit
 Tags: staff, reports, salary, management
 Requires at least: 5.0
 Tested up to: 6.4
