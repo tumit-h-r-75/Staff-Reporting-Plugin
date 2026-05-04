@@ -20,7 +20,15 @@ define('BASMAH_STAFF_REPORTS_VERSION', '1.0.0');
 define('BASMAH_STAFF_REPORTS_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('BASMAH_STAFF_REPORTS_PLUGIN_URL', plugin_dir_url(__FILE__));
 
-require_once BASMAH_STAFF_REPORTS_PLUGIN_DIR . 'includes/class-bassmah-staff-reports.php';
+require_once BASMAH_STAFF_REPORTS_PLUGIN_DIR . 'includes/class-activator.php';
+require_once BASMAH_STAFF_REPORTS_PLUGIN_DIR . 'includes/class-deactivator.php';
+require_once BASMAH_STAFF_REPORTS_PLUGIN_DIR . 'includes/class-roles.php';
+
+if (is_admin()) {
+    require_once BASMAH_STAFF_REPORTS_PLUGIN_DIR . 'admin/class-admin.php';
+}
+
+require_once BASMAH_STAFF_REPORTS_PLUGIN_DIR . 'public/class-public.php';
 
 register_activation_hook(__FILE__, array('Basmah_Staff_Reports_Activator', 'activate'));
 register_deactivation_hook(__FILE__, array('Basmah_Staff_Reports_Deactivator', 'deactivate'));
@@ -28,7 +36,23 @@ register_deactivation_hook(__FILE__, array('Basmah_Staff_Reports_Deactivator', '
 function bassmah_staff_reports_init() {
     load_plugin_textdomain('bassmah-staff-reports', false, dirname(plugin_basename(__FILE__)) . '/languages/');
     
-    $plugin = Bassmah_Staff_Reports::get_instance();
-    $plugin->run();
+    if (is_admin()) {
+        new Basmah_Staff_Reports_Admin();
+    }
+    
+    new Basmah_Staff_Reports_Public();
+    
+    add_filter('login_redirect', 'bassmah_staff_reports_login_redirect', 10, 3);
 }
 add_action('plugins_loaded', 'bassmah_staff_reports_init');
+
+function bassmah_staff_reports_login_redirect($redirect_to, $request, $user) {
+    if (isset($user->roles) && is_array($user->roles)) {
+        if (in_array('basmah_manager', $user->roles) || current_user_can('manage_options')) {
+            return admin_url('admin.php?page=bsr-all-reports');
+        } elseif (in_array('basmah_staff', $user->roles)) {
+            return home_url('/dashboard');
+        }
+    }
+    return $redirect_to;
+}
