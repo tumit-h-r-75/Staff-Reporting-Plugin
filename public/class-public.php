@@ -44,6 +44,16 @@ class Basmah_Staff_Reports_Public {
             return '<p>Please log in to submit a report.</p>';
         }
 
+        $user_id = get_current_user_id();
+        $report_date = current_time('Y-m-d');
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'staff_reports';
+        $existing_report = $wpdb->get_var($wpdb->prepare(
+            "SELECT id FROM $table_name WHERE user_id = %d AND report_date = %s",
+            $user_id,
+            $report_date
+        ));
+
         ob_start();
         ?>
         <div class="bsr-report-form">
@@ -51,47 +61,55 @@ class Basmah_Staff_Reports_Public {
             <?php if (isset($_GET['report_submitted']) && $_GET['report_submitted'] == 1): ?>
                 <p style="color: green; font-weight: bold;">Report submitted successfully!</p>
             <?php endif; ?>
-            <form method="post" action="">
-                <?php wp_nonce_field('bassmah_report_submit', 'bassmah_report_nonce'); ?>
-                
-                <div class="form-group">
-                    <label for="task_category">Task Category:</label>
-                    <select id="task_category" name="task_category" required>
-                        <option value="">Select Category</option>
-                        <option value="Development">Development</option>
-                        <option value="Design">Design</option>
-                        <option value="Testing">Testing</option>
-                        <option value="Documentation">Documentation</option>
-                        <option value="Meeting">Meeting</option>
-                        <option value="Other">Other</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="task_description">Task Description:</label>
-                    <textarea id="task_description" name="task_description" rows="4" required></textarea>
-                </div>
-                
-                <div class="form-group">
-                    <label for="status">Status:</label>
-                    <select id="status" name="status" required>
-                        <option value="">Select Status</option>
-                        <option value="Not Started">Not Started</option>
-                        <option value="In Progress">In Progress</option>
-                        <option value="Completed">Completed</option>
-                        <option value="On Hold">On Hold</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="next_action">Next Action:</label>
-                    <textarea id="next_action" name="next_action" rows="3" required></textarea>
-                </div>
-                
-                <div class="form-group">
-                    <button type="submit" name="bassmah_submit_report">Submit Report</button>
-                </div>
-            </form>
+            <?php if (isset($_GET['duplicate_report']) && $_GET['duplicate_report'] == 1): ?>
+                <p style="color: red; font-weight: bold;">You have already submitted a report for today!</p>
+            <?php endif; ?>
+            
+            <?php if ($existing_report): ?>
+                <p style="color: orange; font-weight: bold;">You have already submitted a report for today (<?php echo esc_html($report_date); ?>).</p>
+            <?php else: ?>
+                <form method="post" action="">
+                    <?php wp_nonce_field('bassmah_report_submit', 'bassmah_report_nonce'); ?>
+                    
+                    <div class="form-group">
+                        <label for="task_category">Task Category:</label>
+                        <select id="task_category" name="task_category" required>
+                            <option value="">Select Category</option>
+                            <option value="Development">Development</option>
+                            <option value="Design">Design</option>
+                            <option value="Testing">Testing</option>
+                            <option value="Documentation">Documentation</option>
+                            <option value="Meeting">Meeting</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="task_description">Task Description:</label>
+                        <textarea id="task_description" name="task_description" rows="4" required></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="status">Status:</label>
+                        <select id="status" name="status" required>
+                            <option value="">Select Status</option>
+                            <option value="Not Started">Not Started</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Completed">Completed</option>
+                            <option value="On Hold">On Hold</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="next_action">Next Action:</label>
+                        <textarea id="next_action" name="next_action" rows="3" required></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <button type="submit" name="bassmah_submit_report">Submit Report</button>
+                    </div>
+                </form>
+            <?php endif; ?>
         </div>
         <?php
         return ob_get_clean();
@@ -123,6 +141,17 @@ class Basmah_Staff_Reports_Public {
 
         global $wpdb;
         $table_name = $wpdb->prefix . 'staff_reports';
+
+        $existing_report = $wpdb->get_var($wpdb->prepare(
+            "SELECT id FROM $table_name WHERE user_id = %d AND report_date = %s",
+            $user_id,
+            $report_date
+        ));
+
+        if ($existing_report) {
+            wp_redirect(add_query_arg('duplicate_report', '1'));
+            exit;
+        }
 
         $wpdb->insert(
             $table_name,
