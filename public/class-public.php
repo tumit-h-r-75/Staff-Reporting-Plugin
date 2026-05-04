@@ -106,9 +106,7 @@ class Basmah_Staff_Reports_Public {
     }
     
     public function render_report_form() {
-        ob_start();
-        require_once BASMAH_STAFF_REPORTS_PLUGIN_DIR . 'public/views/report-form.php';
-        return ob_get_clean();
+        return $this->render_bassmah_report_form();
     }
     
     public function render_my_reports() {
@@ -230,7 +228,7 @@ class Basmah_Staff_Reports_Public {
                     
                     <div class="form-group">
                         <label>Role</label>
-                        <input type="text" value="<?php echo esc_attr(implode(', ', $current_user->roles)); ?>" readonly>
+                        <input type="text" value="<?php echo esc_attr(implode(', ', array_map(function($role) { return ucwords(str_replace(array('_', '-'), ' ', $role)); }, $current_user->roles))); ?>" readonly>
                     </div>
                     
                     <div class="form-group">
@@ -348,7 +346,7 @@ class Basmah_Staff_Reports_Public {
         }
 
         $user_id = get_current_user_id();
-        $report_date = sanitize_text_field($_POST['report_date']);
+        $report_date = current_time('Y-m-d');
         $tasks = isset($_POST['tasks']) ? $_POST['tasks'] : array();
         
         $sanitized_tasks = array();

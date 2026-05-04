@@ -199,6 +199,11 @@ body {
     box-shadow: 0 2px 12px rgba(0,0,0,0.06);
     border: none;
     background: #ffffff;
+    width: 100%;
+}
+
+.wp-list-table table {
+    width: 100%;
 }
 
 .wp-list-table thead th {
