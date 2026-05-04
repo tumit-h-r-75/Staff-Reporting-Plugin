@@ -246,12 +246,37 @@ class Basmah_Staff_Reports_Public {
             $report = Basmah_Staff_Reports_Reports::get_report($existing_report);
         }
 
+        $show_success_modal = isset($_GET['report_submitted']) && $_GET['report_submitted'] == 1 && !isset($_GET['duplicate_report']);
+        $show_duplicate_modal = isset($_GET['duplicate_report']) && $_GET['duplicate_report'] == 1;
+        $show_error_modal = isset($_GET['report_error']) && $_GET['report_error'] == 1;
+
         ob_start();
         ?>
         <div class="bsr-report-form">
             <h2>Submit Daily Work Report</h2>
+
+            <?php if ($show_success_modal || $show_duplicate_modal || $show_error_modal): ?>
+                <div class="bsr-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="bsr-modal-title">
+                    <div class="bsr-modal">
+                        <?php if ($show_success_modal): ?>
+                            <div class="bsr-modal-icon success">OK</div>
+                            <h3 id="bsr-modal-title">Report Submitted</h3>
+                            <p>Your daily work report has been saved successfully. You can submit only one report per day.</p>
+                        <?php elseif ($show_duplicate_modal): ?>
+                            <div class="bsr-modal-icon warning">!</div>
+                            <h3 id="bsr-modal-title">Already Submitted</h3>
+                            <p>You already submitted a report for today. The form is locked for this date.</p>
+                        <?php else: ?>
+                            <div class="bsr-modal-icon error">!</div>
+                            <h3 id="bsr-modal-title">Submission Failed</h3>
+                            <p>Your report could not be saved. Please fill all required task fields and try again.</p>
+                        <?php endif; ?>
+                        <button type="button" class="bsr-modal-close">OK</button>
+                    </div>
+                </div>
+            <?php endif; ?>
             
-            <?php if (isset($_GET['report_submitted']) && $_GET['report_submitted'] == 1 && !isset($_GET['duplicate_report'])): ?>
+            <?php if (false && isset($_GET['report_submitted']) && $_GET['report_submitted'] == 1 && !isset($_GET['duplicate_report'])): ?>
                 <div class="notification-popup" style="border-left: 4px solid #48bb78; background: #c6f6d5; padding: 30px; border-radius: 10px; margin-bottom: 20px;">
                     <p style="margin: 0; font-size: 1.2rem; font-weight: 700; color: #276749; line-height: 1.6;">
                         ✅ Your report for today has been submitted successfully!
@@ -262,7 +287,7 @@ class Basmah_Staff_Reports_Public {
                 </div>
             <?php endif; ?>
             
-            <?php if (isset($_GET['duplicate_report']) && $_GET['duplicate_report'] == 1): ?>
+            <?php if (false && isset($_GET['duplicate_report']) && $_GET['duplicate_report'] == 1): ?>
                 <div class="notification-popup" style="border-left: 4px solid #f56565; background: #fed7d7; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
                     <p style="margin: 0; font-size: 1.05rem; font-weight: 600; color: #c53030;">
                         ⚠️ You have already submitted a report for today!
@@ -405,6 +430,12 @@ class Basmah_Staff_Reports_Public {
             $(document).on('click', '.remove-task-btn', function() {
                 $(this).closest('.task-item-form').remove();
             });
+
+            $('.bsr-modal-close').on('click', function() {
+                $('.bsr-modal-overlay').fadeOut(160, function() {
+                    $(this).remove();
+                });
+            });
         });
         </script>
         <?php
@@ -426,15 +457,28 @@ class Basmah_Staff_Reports_Public {
 
         $user_id = get_current_user_id();
         $report_date = current_time('Y-m-d');
-        $tasks = isset($_POST['tasks']) ? $_POST['tasks'] : array();
+        $tasks = isset($_POST['tasks']) && is_array($_POST['tasks']) ? $_POST['tasks'] : array();
         
         $sanitized_tasks = array();
         foreach ($tasks as $task) {
+            if (!is_array($task)) {
+                continue;
+            }
+
+            $task_category = isset($task['task_category']) ? sanitize_text_field($task['task_category']) : '';
+            $task_description = isset($task['task_description']) ? sanitize_textarea_field($task['task_description']) : '';
+            $status = isset($task['status']) ? sanitize_text_field($task['status']) : '';
+            $next_action = isset($task['next_action']) ? sanitize_textarea_field($task['next_action']) : '';
+
+            if ($task_category === '' || $task_description === '' || $status === '' || $next_action === '') {
+                continue;
+            }
+
             $task_data = array(
-                'task_category' => sanitize_text_field($task['task_category']),
-                'task_description' => sanitize_textarea_field($task['task_description']),
-                'status' => sanitize_text_field($task['status']),
-                'next_action' => sanitize_textarea_field($task['next_action'])
+                'task_category' => $task_category,
+                'task_description' => $task_description,
+                'status' => $status,
+                'next_action' => $next_action
             );
             
             if (!empty($task['manager_assigned_task'])) {
@@ -454,6 +498,11 @@ class Basmah_Staff_Reports_Public {
             exit;
         }
 
+        if (empty($sanitized_tasks)) {
+            wp_redirect(add_query_arg('report_error', '1'));
+            exit;
+        }
+
         $inserted = Basmah_Staff_Reports_Reports::create_report(array(
             'user_id' => $user_id,
             'report_date' => $report_date,
@@ -462,9 +511,16 @@ class Basmah_Staff_Reports_Public {
 
         if ($inserted) {
             Basmah_Staff_Reports_Emails::notify_manager_on_report_submission($user_id, $report_date);
+            wp_redirect(add_query_arg('report_submitted', '1'));
+            exit;
         }
 
-        wp_redirect(add_query_arg('report_submitted', '1'));
+        if (Basmah_Staff_Reports_Reports::report_exists($user_id, $report_date)) {
+            wp_redirect(add_query_arg('duplicate_report', '1'));
+            exit;
+        }
+
+        wp_redirect(add_query_arg('report_error', '1'));
         exit;
     }
 }

@@ -5,13 +5,13 @@ class Basmah_Staff_Reports_Reports {
         $table_name = $wpdb->prefix . 'staff_reports';
         
         return $wpdb->insert($table_name, array(
-            'user_id' => $data['user_id'],
-            'report_date' => $data['report_date'],
-            'tasks_json' => json_encode($data['tasks']),
+            'user_id' => intval($data['user_id']),
+            'report_date' => sanitize_text_field($data['report_date']),
+            'tasks_json' => wp_json_encode($data['tasks']),
             'status' => 'pending',
             'submission_time' => current_time('mysql'),
             'created_at' => current_time('mysql'),
-        ));
+        ), array('%d', '%s', '%s', '%s', '%s', '%s'));
     }
     
     public static function get_reports($args = array()) {

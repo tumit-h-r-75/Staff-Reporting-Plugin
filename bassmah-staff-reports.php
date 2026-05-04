@@ -3,7 +3,7 @@
  * Plugin Name: Bassmah Staff Reports
  * Plugin URI: https://example.com/
  * Description: A comprehensive staff reporting and salary management plugin for WordPress.
- * Version: 1.0.5 
+ * Version: 1.0.6
  * Author: Tumit
  * Author URI: https://example.com/
  * License: GPL v2 or later
@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('BASMAH_STAFF_REPORTS_VERSION', '1.0.5');
+define('BASMAH_STAFF_REPORTS_VERSION', '1.0.6');
 define('BASMAH_STAFF_REPORTS_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('BASMAH_STAFF_REPORTS_PLUGIN_URL', plugin_dir_url(__FILE__));
 
@@ -44,6 +44,9 @@ register_deactivation_hook(__FILE__, array('Basmah_Staff_Reports_Deactivator', '
 
 function bassmah_staff_reports_init() {
     load_plugin_textdomain('bassmah-staff-reports', false, dirname(plugin_basename(__FILE__)) . '/languages/');
+    if (get_option('bsr_capabilities_synced_version') !== BASMAH_STAFF_REPORTS_VERSION) {
+        Basmah_Staff_Reports_Roles::sync_capabilities();
+    }
     
     if (is_admin()) {
         new Basmah_Staff_Reports_Admin();
