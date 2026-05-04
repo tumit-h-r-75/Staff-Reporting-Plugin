@@ -64,8 +64,8 @@ class Basmah_Staff_Reports_Admin {
         
         add_submenu_page(
             'bassmah-staff-reports',
-            'Working Days',
-            'Working Days',
+            'Working Days & Holidays',
+            'Working Days & Holidays',
             'manage_options',
             'bsr-working-days',
             array($this, 'render_working_days')
@@ -178,4 +178,4 @@ class Basmah_Staff_Reports_Admin {
     }
 }
 
-new Basmah_Staff_Reports_Admin();
+

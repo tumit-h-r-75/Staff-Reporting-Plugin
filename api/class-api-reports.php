@@ -34,4 +34,4 @@ class Basmah_Staff_Reports_API_Reports {
     }
 }
 
-new Basmah_Staff_Reports_API_Reports();
+

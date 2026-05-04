@@ -26,4 +26,4 @@ class Basmah_Staff_Reports_API_Salary {
     }
 }
 
-new Basmah_Staff_Reports_API_Salary();
+

@@ -314,4 +314,4 @@ class Basmah_Staff_Reports_Public {
     }
 }
 
-new Basmah_Staff_Reports_Public();
+

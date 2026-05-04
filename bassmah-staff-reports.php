@@ -23,12 +23,19 @@ define('BASMAH_STAFF_REPORTS_PLUGIN_URL', plugin_dir_url(__FILE__));
 require_once BASMAH_STAFF_REPORTS_PLUGIN_DIR . 'includes/class-activator.php';
 require_once BASMAH_STAFF_REPORTS_PLUGIN_DIR . 'includes/class-deactivator.php';
 require_once BASMAH_STAFF_REPORTS_PLUGIN_DIR . 'includes/class-roles.php';
+require_once BASMAH_STAFF_REPORTS_PLUGIN_DIR . 'includes/class-reports.php';
+require_once BASMAH_STAFF_REPORTS_PLUGIN_DIR . 'includes/class-salary.php';
+require_once BASMAH_STAFF_REPORTS_PLUGIN_DIR . 'includes/class-working-days.php';
+require_once BASMAH_STAFF_REPORTS_PLUGIN_DIR . 'includes/class-helper.php';
 
 if (is_admin()) {
     require_once BASMAH_STAFF_REPORTS_PLUGIN_DIR . 'admin/class-admin.php';
 }
 
 require_once BASMAH_STAFF_REPORTS_PLUGIN_DIR . 'public/class-public.php';
+require_once BASMAH_STAFF_REPORTS_PLUGIN_DIR . 'api/class-api-reports.php';
+require_once BASMAH_STAFF_REPORTS_PLUGIN_DIR . 'api/class-api-salary.php';
+require_once BASMAH_STAFF_REPORTS_PLUGIN_DIR . 'api/class-api-auth.php';
 
 register_activation_hook(__FILE__, array('Basmah_Staff_Reports_Activator', 'activate'));
 register_deactivation_hook(__FILE__, array('Basmah_Staff_Reports_Deactivator', 'deactivate'));
@@ -41,6 +48,8 @@ function bassmah_staff_reports_init() {
     }
     
     new Basmah_Staff_Reports_Public();
+    new Basmah_Staff_Reports_API_Reports();
+    new Basmah_Staff_Reports_API_Salary();
     
     add_filter('login_redirect', 'bassmah_staff_reports_login_redirect', 10, 3);
 }
