@@ -2,6 +2,7 @@
 class Basmah_Staff_Reports_Public {
     public function __construct() {
         add_shortcode('bsr_staff_dashboard', array($this, 'render_staff_dashboard'));
+        add_shortcode('bassmah_staff_dashboard', array($this, 'render_bassmah_staff_dashboard'));
         add_shortcode('bsr_report_form', array($this, 'render_report_form'));
         add_shortcode('bassmah_report_form', array($this, 'render_bassmah_report_form'));
         add_shortcode('bsr_my_reports', array($this, 'render_my_reports'));
@@ -18,6 +19,93 @@ class Basmah_Staff_Reports_Public {
     public function render_staff_dashboard() {
         ob_start();
         require_once BASMAH_STAFF_REPORTS_PLUGIN_DIR . 'public/views/dashboard.php';
+        return ob_get_clean();
+    }
+
+    public function render_bassmah_staff_dashboard() {
+        if (!is_user_logged_in()) {
+            return '<p>Please log in to view your dashboard.</p>';
+        }
+
+        $user_id = get_current_user_id();
+        $today = current_time('Y-m-d');
+        $current_month = date('m');
+        $current_year = date('Y');
+        $days_in_month = cal_days_in_month(CAL_GREGORIAN, $current_month, $current_year);
+
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'staff_reports';
+
+        $today_report = $wpdb->get_var($wpdb->prepare(
+            "SELECT id FROM $table_name WHERE user_id = %d AND report_date = %s",
+            $user_id,
+            $today
+        ));
+
+        $monthly_reports = $wpdb->get_results($wpdb->prepare(
+            "SELECT DISTINCT report_date FROM $table_name WHERE user_id = %d AND MONTH(report_date) = %d AND YEAR(report_date) = %d",
+            $user_id,
+            $current_month,
+            $current_year
+        ), ARRAY_A);
+
+        $submitted_days = count($monthly_reports);
+        $working_days = $days_in_month;
+        $missing_days = $working_days - $submitted_days;
+
+        $daily_rate = 200;
+        $monthly_salary = $submitted_days * $daily_rate;
+
+        ob_start();
+        ?>
+        <div class="bsr-staff-dashboard">
+            <h2>Staff Dashboard</h2>
+
+            <div class="dashboard-section">
+                <h3>Today's Report Status</h3>
+                <div class="status-card <?php echo $today_report ? 'submitted' : 'missing'; ?>">
+                    <?php if ($today_report): ?>
+                        <p class="status-text submitted">Report Submitted</p>
+                        <p class="status-date"><?php echo esc_html($today); ?></p>
+                    <?php else: ?>
+                        <p class="status-text missing">Report Missing</p>
+                        <p class="status-date"><?php echo esc_html($today); ?></p>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <div class="dashboard-section">
+                <h3>Monthly Summary</h3>
+                <div class="summary-cards">
+                    <div class="summary-card submitted">
+                        <p class="summary-number"><?php echo esc_html($submitted_days); ?></p>
+                        <p class="summary-label">Days Submitted</p>
+                    </div>
+                    <div class="summary-card missing">
+                        <p class="summary-number"><?php echo esc_html($missing_days); ?></p>
+                        <p class="summary-label">Days Missing</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-section">
+                <h3>Salary Overview</h3>
+                <div class="salary-card">
+                    <p class="salary-label">Current Month Earnings</p>
+                    <p class="salary-amount">$<?php echo number_format($monthly_salary, 2); ?></p>
+                    <p class="salary-details">Based on <?php echo esc_html($submitted_days); ?> working days at $<?php echo number_format($daily_rate, 2); ?>/day</p>
+                </div>
+            </div>
+
+            <div class="dashboard-section">
+                <h3>Quick Actions</h3>
+                <div class="action-buttons">
+                    <a href="#" class="btn btn-primary" onclick="document.querySelector('[data-shortcode=\"bassmah_report_form\"]').scrollIntoView({behavior: 'smooth'}); return false;">Submit Report</a>
+                    <a href="#" class="btn btn-secondary" onclick="document.querySelector('[data-shortcode=\"bsr_my_reports\"]').scrollIntoView({behavior: 'smooth'}); return false;">My Reports</a>
+                </div>
+            </div>
+        </div>
+        <?php
         return ob_get_clean();
     }
     
