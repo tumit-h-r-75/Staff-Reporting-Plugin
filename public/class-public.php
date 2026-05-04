@@ -24,8 +24,15 @@ class Basmah_Staff_Reports_Public {
     }
 
     public function render_bassmah_staff_dashboard() {
-        if (!is_user_logged_in() || !current_user_can('basmah_view_my_salary')) {
-            return '<p style="padding: 20px; background: #fff; border-radius: 8px; text-align: center;">Please log in with a staff account to view your dashboard.</p>';
+        if (!is_user_logged_in()) {
+            return '<p style="padding: 20px; background: #fff; border-radius: 8px; text-align: center;">Please log in to view your dashboard.</p>';
+        }
+        
+        $is_admin = current_user_can('manage_options');
+        $can_view = current_user_can('basmah_view_my_salary') || $is_admin;
+        
+        if (!$can_view) {
+            return '<p style="padding: 20px; background: #fff; border-radius: 8px; text-align: center;">You do not have permission to view the dashboard.</p>';
         }
 
         $user_id = get_current_user_id();
@@ -161,8 +168,15 @@ class Basmah_Staff_Reports_Public {
     }
 
     public function render_bassmah_my_reports() {
-        if (!is_user_logged_in() || !current_user_can('basmah_view_my_reports')) {
-            return '<p style="padding: 20px; background: #fff; border-radius: 8px; text-align: center;">Please log in with a staff account to view your reports.</p>';
+        if (!is_user_logged_in()) {
+            return '<p style="padding: 20px; background: #fff; border-radius: 8px; text-align: center;">Please log in to view your reports.</p>';
+        }
+        
+        $is_admin = current_user_can('manage_options');
+        $can_view = current_user_can('basmah_view_my_reports') || $is_admin;
+        
+        if (!$can_view) {
+            return '<p style="padding: 20px; background: #fff; border-radius: 8px; text-align: center;">You do not have permission to view reports.</p>';
         }
 
         $user_id = get_current_user_id();
@@ -210,12 +224,20 @@ class Basmah_Staff_Reports_Public {
     }
 
     public function render_bassmah_report_form() {
-        if (!is_user_logged_in() || !current_user_can('basmah_submit_report')) {
-            return '<p style="padding: 20px; background: #fff; border-radius: 8px; text-align: center;">Only logged-in staff can submit reports.</p>';
+        if (!is_user_logged_in()) {
+            return '<p style="padding: 20px; background: #fff; border-radius: 8px; text-align: center;">Please log in to submit a report.</p>';
         }
 
-        $user_id = get_current_user_id();
         $current_user = wp_get_current_user();
+        $user_id = get_current_user_id();
+        
+        // Allow admin (manage_options) to see all reports/forms, but restrict staff to submission only
+        $is_admin = current_user_can('manage_options');
+        $is_staff = current_user_can('basmah_submit_report');
+        
+        if (!$is_admin && !$is_staff) {
+            return '<p style="padding: 20px; background: #fff; border-radius: 8px; text-align: center;">You do not have permission to submit reports.</p>';
+        }
         $report_date = current_time('Y-m-d');
         $existing_report = Basmah_Staff_Reports_Reports::report_exists($user_id, $report_date);
         
@@ -229,10 +251,13 @@ class Basmah_Staff_Reports_Public {
         <div class="bsr-report-form">
             <h2>Submit Daily Work Report</h2>
             
-            <?php if (isset($_GET['report_submitted']) && $_GET['report_submitted'] == 1): ?>
-                <div class="notification-popup" style="border-left: 4px solid #48bb78; background: #c6f6d5; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
-                    <p style="margin: 0; font-size: 1.05rem; font-weight: 600; color: #276749;">
-                        ✅ Report submitted successfully! Your work is waiting for admin check.
+            <?php if (isset($_GET['report_submitted']) && $_GET['report_submitted'] == 1 && !isset($_GET['duplicate_report'])): ?>
+                <div class="notification-popup" style="border-left: 4px solid #48bb78; background: #c6f6d5; padding: 30px; border-radius: 10px; margin-bottom: 20px;">
+                    <p style="margin: 0; font-size: 1.2rem; font-weight: 700; color: #276749; line-height: 1.6;">
+                        ✅ Your report for today has been submitted successfully!
+                    </p>
+                    <p style="margin: 15px 0 0 0; font-size: 1.05rem; color: #22543d;">
+                        Your task submission has been saved. You can submit only one report per day. To view your submission status, check back tomorrow or visit your reports history.
                     </p>
                 </div>
             <?php endif; ?>
@@ -246,23 +271,32 @@ class Basmah_Staff_Reports_Public {
             <?php endif; ?>
             
             <?php if ($existing_report && $report): ?>
-                <div class="notification-popup" style="border-left: 4px solid <?php echo $report['status'] == 'approved' ? '#48bb78' : ($report['status'] == 'rejected' ? '#f56565' : '#ed8936'); ?>; background: <?php echo $report['status'] == 'approved' ? '#c6f6d5' : ($report['status'] == 'rejected' ? '#fed7d7' : '#feebc8'); ?>; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
-                    <p style="margin: 0; font-size: 1.05rem; font-weight: 600; color: <?php echo $report['status'] == 'approved' ? '#276749' : ($report['status'] == 'rejected' ? '#c53030' : '#c05621'); ?>;">
+                <div class="submission-status-card" style="border-left: 5px solid <?php echo $report['status'] == 'approved' ? '#48bb78' : ($report['status'] == 'rejected' ? '#f56565' : '#ed8936'); ?>; background: <?php echo $report['status'] == 'approved' ? '#c6f6d5' : ($report['status'] == 'rejected' ? '#fed7d7' : '#feebc8'); ?>; padding: 30px; border-radius: 12px; margin-bottom: 20px;">
+                    <h3 style="margin-top: 0; margin-bottom: 15px; color: <?php echo $report['status'] == 'approved' ? '#276749' : ($report['status'] == 'rejected' ? '#c53030' : '#c05621'); ?>; font-size: 1.2rem;">
                         <?php if ($report['status'] == 'pending'): ?>
-                            ⏳ Your Work Is Waiting For Admin Check
+                            ⏳ Your report for today is pending review
                         <?php elseif ($report['status'] == 'approved'): ?>
-                            ✅ Your Work Has Been Approved!
+                            ✅ Your report for today has been approved!
                         <?php elseif ($report['status'] == 'rejected'): ?>
-                            ❌ Your Work Has Been Rejected
+                            ❌ Your report for today was rejected
                         <?php endif; ?>
+                    </h3>
+                    <p style="margin: 10px 0; color: #2d3748; font-weight: 600;">
+                        <strong>Submitted:</strong> <?php echo esc_html(date('F j, Y g:i a', strtotime($report['created_at']))); ?>
                     </p>
                     <?php if ($report['manager_comment']): ?>
-                        <p style="margin-top: 12px; font-size: 1rem; color: #2d3748;">
-                            <strong>Manager Comment:</strong> <?php echo esc_html($report['manager_comment']); ?>
-                        </p>
+                        <div style="margin-top: 15px; padding: 15px; background: rgba(255,255,255,0.5); border-radius: 8px;">
+                            <p style="margin: 0 0 8px 0; color: #2d3748; font-weight: 600;">Manager Comment:</p>
+                            <p style="margin: 0; color: #2d3748;"><?php echo esc_html($report['manager_comment']); ?></p>
+                        </div>
                     <?php endif; ?>
                 </div>
-            <?php elseif (!$existing_report): ?>
+                <div style="background: #f0f4f8; padding: 20px; border-radius: 12px; text-align: center;">
+                    <p style="margin: 0; font-size: 1.05rem; color: #2d3748;">
+                        <strong>You can submit only one report per day.</strong> Your form is locked for today.
+                    </p>
+                </div>
+            <?php elseif (!$existing_report && current_user_can('basmah_submit_report')): ?>
                 <form method="post" action="">
                     <?php wp_nonce_field('bassmah_report_submit', 'bassmah_report_nonce'); ?>
                     
@@ -339,8 +373,8 @@ class Basmah_Staff_Reports_Public {
                         <button type="submit" name="bassmah_submit_report">Submit Report</button>
                     </div>
                 </form>
-            <?php endif; ?>
-        </div>
+            <?php elseif (!current_user_can('basmah_submit_report') && current_user_can('manage_options')): ?>
+                <div style="padding: 25px; background: linear-gradient(135deg, #e6f7ff 0%, #bae7ff 100%); border-radius: 12px; border-left: 4px solid #4299e1;\">\n                    <p style=\"margin: 0; font-size: 1.15rem; color: #0050b3; font-weight: 700;\">\n                        👨‍💼 Admin Access Notice\n                    </p>\n                    <p style=\"margin: 12px 0 0 0; color: #0050b3; line-height: 1.6;\">\n                        The report form is designed for staff members only. As an administrator, you have full access to manage all reports, approvals, and settings from the admin panel.\n                    </p>\n                </div>\n            <?php endif; ?>\n        </div>
         
         <script>
         jQuery(document).ready(function($) {
