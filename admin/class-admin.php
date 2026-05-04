@@ -10,7 +10,7 @@ class Basmah_Staff_Reports_Admin {
         add_menu_page(
             'Basmah Staff Reports',
             'Staff Reports',
-            'manage_options',
+            'basmah_view_all_reports',
             'bassmah-staff-reports',
             array($this, 'render_dashboard'),
             'dashicons-chart-bar',
@@ -21,7 +21,7 @@ class Basmah_Staff_Reports_Admin {
             'bassmah-staff-reports',
             'Dashboard',
             'Dashboard',
-            'manage_options',
+            'basmah_view_all_reports',
             'bassmah-staff-reports',
             array($this, 'render_dashboard')
         );
@@ -30,7 +30,7 @@ class Basmah_Staff_Reports_Admin {
             'bassmah-staff-reports',
             'All Reports',
             'All Reports',
-            'manage_options',
+            'basmah_view_all_reports',
             'bsr-all-reports',
             array($this, 'render_all_reports')
         );
@@ -39,7 +39,7 @@ class Basmah_Staff_Reports_Admin {
             'bassmah-staff-reports',
             'Single Report',
             'Single Report',
-            'manage_options',
+            'basmah_edit_reports',
             'bsr-single-report',
             array($this, 'render_single_report')
         );
@@ -48,7 +48,7 @@ class Basmah_Staff_Reports_Admin {
             'bassmah-staff-reports',
             'Staff List',
             'Staff List',
-            'manage_options',
+            'basmah_manage_staff',
             'bsr-staff-list',
             array($this, 'render_staff_list')
         );
@@ -57,7 +57,7 @@ class Basmah_Staff_Reports_Admin {
             'bassmah-staff-reports',
             'Salary Settings',
             'Salary Settings',
-            'manage_options',
+            'basmah_manage_salaries',
             'bsr-salary-settings',
             array($this, 'render_salary_settings')
         );
@@ -66,7 +66,7 @@ class Basmah_Staff_Reports_Admin {
             'bassmah-staff-reports',
             'Working Days & Holidays',
             'Working Days & Holidays',
-            'manage_options',
+            'basmah_manage_working_days',
             'bsr-working-days',
             array($this, 'render_working_days')
         );
@@ -78,7 +78,7 @@ class Basmah_Staff_Reports_Admin {
     }
     
     public function handle_admin_actions() {
-        if (!current_user_can('manage_options')) {
+        if (!current_user_can('basmah_view_all_reports') && !current_user_can('manage_options')) {
             return;
         }
         
@@ -86,35 +86,35 @@ class Basmah_Staff_Reports_Admin {
             $this->handle_save_comment();
         }
         
-        if (isset($_POST['bsr_save_salary'])) {
+        if (isset($_POST['bsr_save_salary']) && current_user_can('basmah_manage_salaries')) {
             $this->handle_save_salary();
         }
         
-        if (isset($_POST['bsr_add_holiday'])) {
+        if (isset($_POST['bsr_add_holiday']) && current_user_can('basmah_manage_working_days')) {
             $this->handle_add_holiday();
         }
         
-        if (isset($_GET['bsr_delete_holiday'])) {
+        if (isset($_GET['bsr_delete_holiday']) && current_user_can('basmah_manage_working_days')) {
             $this->handle_delete_holiday();
         }
         
-        if (isset($_POST['bsr_approve_report'])) {
+        if (isset($_POST['bsr_approve_report']) && current_user_can('basmah_edit_reports')) {
             $this->handle_approve_report();
         }
         
-        if (isset($_POST['bsr_reject_report'])) {
+        if (isset($_POST['bsr_reject_report']) && current_user_can('basmah_edit_reports')) {
             $this->handle_reject_report();
         }
         
-        if (isset($_GET['bsr_export'])) {
+        if (isset($_GET['bsr_export']) && current_user_can('basmah_export_reports')) {
             $this->handle_export();
         }
         
-        if (isset($_GET['bsr_delete_report'])) {
+        if (isset($_GET['bsr_delete_report']) && current_user_can('basmah_edit_reports')) {
             $this->handle_delete_report();
         }
         
-        if (isset($_POST['bsr_update_report'])) {
+        if (isset($_POST['bsr_update_report']) && current_user_can('basmah_edit_reports')) {
             $this->handle_update_report();
         }
     }

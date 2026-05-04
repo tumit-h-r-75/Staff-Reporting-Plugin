@@ -24,8 +24,8 @@ class Basmah_Staff_Reports_Public {
     }
 
     public function render_bassmah_staff_dashboard() {
-        if (!is_user_logged_in()) {
-            return '<p style="padding: 20px; background: #fff; border-radius: 8px; text-align: center;">Please log in to view your dashboard.</p>';
+        if (!is_user_logged_in() || !current_user_can('basmah_view_my_salary')) {
+            return '<p style="padding: 20px; background: #fff; border-radius: 8px; text-align: center;">Please log in with a staff account to view your dashboard.</p>';
         }
 
         $user_id = get_current_user_id();
@@ -34,6 +34,17 @@ class Basmah_Staff_Reports_Public {
         $current_year = date('Y');
 
         global $wpdb;
+        $first_of_month = sprintf('%04d-%02d-01', $current_year, $current_month);
+        $last_of_month = date('Y-m-t');
+        $monthly_reports = Basmah_Staff_Reports_Reports::get_reports(array(
+            'user_id' => $user_id,
+            'date_from' => $first_of_month,
+            'date_to' => $last_of_month
+        ));
+        $calendar_status = array();
+        foreach ($monthly_reports as $item) {
+            $calendar_status[$item['report_date']] = $item['status'];
+        }
         $table_name = $wpdb->prefix . 'staff_reports';
 
         $today_report = $wpdb->get_var($wpdb->prepare(
@@ -100,6 +111,40 @@ class Basmah_Staff_Reports_Public {
                     </div>
                 </div>
             </div>
+
+            <div class="dashboard-section">
+                <h3>Monthly Report Calendar</h3>
+                <div class="calendar-grid">
+                    <?php
+                    $days_in_month = cal_days_in_month(CAL_GREGORIAN, $current_month, $current_year);
+                    $weekdays = array('Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat');
+                    ?>
+                    <div class="calendar-header">
+                        <?php foreach ($weekdays as $weekday): ?>
+                            <div class="calendar-cell calendar-header-cell"><?php echo esc_html($weekday); ?></div>
+                        <?php endforeach; ?>
+                    </div>
+                    <div class="calendar-body">
+                        <?php
+                        $first_weekday = date('w', strtotime($first_of_month));
+                        for ($empty = 0; $empty < $first_weekday; $empty++): ?>
+                            <div class="calendar-cell calendar-empty"></div>
+                        <?php endfor; ?>
+
+                        <?php for ($day = 1; $day <= $days_in_month; $day++):
+                            $date = sprintf('%04d-%02d-%02d', $current_year, $current_month, $day);
+                            $status = isset($calendar_status[$date]) ? $calendar_status[$date] : 'missing';
+                            $status_class = $status === 'approved' ? 'approved' : ($status === 'pending' ? 'pending' : ($status === 'rejected' ? 'rejected' : 'missing'));
+                            $is_working_day = Basmah_Staff_Reports_Working_Days::is_working_day($date);
+                        ?>
+                            <div class="calendar-cell calendar-day <?php echo esc_attr($status_class); ?><?php echo $is_working_day ? '' : ' holiday'; ?>">
+                                <span class="day-number"><?php echo esc_html($day); ?></span>
+                                <span class="day-status"><?php echo esc_html(ucfirst($status)); ?></span>
+                            </div>
+                        <?php endfor; ?>
+                    </div>
+                </div>
+            </div>
         </div>
         <?php
         return ob_get_clean();
@@ -116,8 +161,8 @@ class Basmah_Staff_Reports_Public {
     }
 
     public function render_bassmah_my_reports() {
-        if (!is_user_logged_in()) {
-            return '<p style="padding: 20px; background: #fff; border-radius: 8px; text-align: center;">Please log in to view your reports.</p>';
+        if (!is_user_logged_in() || !current_user_can('basmah_view_my_reports')) {
+            return '<p style="padding: 20px; background: #fff; border-radius: 8px; text-align: center;">Please log in with a staff account to view your reports.</p>';
         }
 
         $user_id = get_current_user_id();
@@ -165,8 +210,8 @@ class Basmah_Staff_Reports_Public {
     }
 
     public function render_bassmah_report_form() {
-        if (!is_user_logged_in()) {
-            return '<p style="padding: 20px; background: #fff; border-radius: 8px; text-align: center;">Please log in to submit a report.</p>';
+        if (!is_user_logged_in() || !current_user_can('basmah_submit_report')) {
+            return '<p style="padding: 20px; background: #fff; border-radius: 8px; text-align: center;">Only logged-in staff can submit reports.</p>';
         }
 
         $user_id = get_current_user_id();
@@ -337,7 +382,7 @@ class Basmah_Staff_Reports_Public {
             return;
         }
 
-        if (!is_user_logged_in()) {
+        if (!is_user_logged_in() || !current_user_can('basmah_submit_report')) {
             return;
         }
 
@@ -375,11 +420,15 @@ class Basmah_Staff_Reports_Public {
             exit;
         }
 
-        Basmah_Staff_Reports_Reports::create_report(array(
+        $inserted = Basmah_Staff_Reports_Reports::create_report(array(
             'user_id' => $user_id,
             'report_date' => $report_date,
             'tasks' => $sanitized_tasks
         ));
+
+        if ($inserted) {
+            Basmah_Staff_Reports_Emails::notify_manager_on_report_submission($user_id, $report_date);
+        }
 
         wp_redirect(add_query_arg('report_submitted', '1'));
         exit;

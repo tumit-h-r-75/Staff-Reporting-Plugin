@@ -21,6 +21,14 @@
                 </div>
                 
                 <div style="flex: 1; min-width: 150px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #2d3748;">Role</label>
+                    <select name="role" style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px;">
+                        <option value="">All Roles</option>
+                        <option value="basmah_staff" <?php echo isset($_GET['role']) && $_GET['role'] == 'basmah_staff' ? 'selected' : ''; ?>>Staff</option>
+                        <option value="basmah_manager" <?php echo isset($_GET['role']) && $_GET['role'] == 'basmah_manager' ? 'selected' : ''; ?>>Manager</option>
+                    </select>
+                </div>
+                <div style="flex: 1; min-width: 150px;">
                     <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #2d3748;">Status</label>
                     <select name="status" style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px;">
                         <option value="">All Status</option>

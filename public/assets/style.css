@@ -119,6 +119,73 @@ body {
     border: 2px solid #fc8181;
 }
 
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.calendar-header {
+    display: contents;
+}
+
+.calendar-body {
+    display: contents;
+}
+
+.calendar-cell {
+    min-height: 100px;
+    padding: 12px;
+    border-radius: 14px;
+    background: #edf2f7;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.calendar-header-cell {
+    background: #f7fafc;
+    font-weight: 700;
+    color: #4a5568;
+    text-align: center;
+    padding: 14px 10px;
+}
+
+.calendar-day.approved {
+    background: #c6f6d5;
+    border-color: #48bb78;
+}
+
+.calendar-day.pending {
+    background: #feebc8;
+    border-color: #dd6b20;
+}
+
+.calendar-day.rejected {
+    background: #fed7d7;
+    border-color: #c53030;
+}
+
+.calendar-day.missing {
+    background: #e2e8f0;
+    border-color: #a0aec0;
+}
+
+.calendar-day.holiday {
+    opacity: 0.7;
+}
+
+.day-number {
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.day-status {
+    font-size: 0.9rem;
+    color: #2d3748;
+}
+
 .summary-number {
     font-size: 3.5rem;
     font-weight: 800;

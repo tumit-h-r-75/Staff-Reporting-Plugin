@@ -46,6 +46,19 @@ class Basmah_Staff_Reports_Reports {
             $params[] = $args['date_to'];
         }
         
+        if (isset($args['role'])) {
+            $user_meta_table = $wpdb->prefix . 'usermeta';
+            $capabilities_key = $wpdb->prefix . 'capabilities';
+            $query .= " AND EXISTS (
+                SELECT 1 FROM $user_meta_table um
+                WHERE um.user_id = u.ID
+                AND um.meta_key = %s
+                AND um.meta_value LIKE %s
+            )";
+            $params[] = $capabilities_key;
+            $params[] = '%"' . $args['role'] . '"%';
+        }
+        
         $query .= " ORDER BY r.report_date DESC, r.created_at DESC";
         
         if (!empty($params)) {
