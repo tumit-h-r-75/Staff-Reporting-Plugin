@@ -109,6 +109,14 @@ class Basmah_Staff_Reports_Admin {
         if (isset($_GET['bsr_export'])) {
             $this->handle_export();
         }
+        
+        if (isset($_GET['bsr_delete_report'])) {
+            $this->handle_delete_report();
+        }
+        
+        if (isset($_POST['bsr_update_report'])) {
+            $this->handle_update_report();
+        }
     }
     
     private function handle_save_comment() {
@@ -148,9 +156,16 @@ class Basmah_Staff_Reports_Admin {
         }
         
         $report_id = intval($_POST['report_id']);
+        $comment = isset($_POST['manager_comment']) ? sanitize_textarea_field($_POST['manager_comment']) : '';
+        
+        if (empty($comment)) {
+            wp_redirect(add_query_arg('comment_required', '1', admin_url('admin.php?page=bsr-single-report&report_id=' . $report_id)));
+            exit;
+        }
         
         Basmah_Staff_Reports_Reports::update_report($report_id, array(
-            'status' => 'rejected'
+            'status' => 'rejected',
+            'manager_comment' => $comment
         ));
         
         wp_redirect(add_query_arg('report_rejected', '1', admin_url('admin.php?page=bsr-single-report&report_id=' . $report_id)));
@@ -244,6 +259,31 @@ class Basmah_Staff_Reports_Admin {
         }
         
         fclose($output);
+        exit;
+    }
+    
+    private function handle_delete_report() {
+        $report_id = intval($_GET['bsr_delete_report']);
+        Basmah_Staff_Reports_Reports::delete_report($report_id);
+        wp_redirect(add_query_arg('report_deleted', '1', admin_url('admin.php?page=bsr-all-reports')));
+        exit;
+    }
+    
+    private function handle_update_report() {
+        if (!isset($_POST['bsr_update_nonce']) || !wp_verify_nonce($_POST['bsr_update_nonce'], 'bsr_update_report')) {
+            return;
+        }
+        
+        $report_id = intval($_POST['report_id']);
+        $tasks_json = isset($_POST['tasks_json']) ? $_POST['tasks_json'] : '';
+        
+        $data = array();
+        if (!empty($tasks_json)) {
+            $data['tasks_json'] = $tasks_json;
+        }
+        
+        Basmah_Staff_Reports_Reports::update_report($report_id, $data);
+        wp_redirect(add_query_arg('report_updated', '1', admin_url('admin.php?page=bsr-single-report&report_id=' . $report_id)));
         exit;
     }
     

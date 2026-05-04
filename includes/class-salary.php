@@ -58,16 +58,33 @@ class Basmah_Staff_Reports_Salary {
     public static function calculate_salary($user_id, $month, $year) {
         $settings = self::get_settings($user_id);
         $working_days = Basmah_Staff_Reports_Working_Days::get_working_days_count($month, $year);
-        $submitted_days = Basmah_Staff_Reports_Reports::get_report_count(array(
-            'user_id' => $user_id,
-            'month' => $month,
-            'year' => $year
-        ));
+        
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'staff_reports';
+        
+        $reports = $wpdb->get_results($wpdb->prepare(
+            "SELECT report_date, status FROM $table_name WHERE user_id = %d AND MONTH(report_date) = %d AND YEAR(report_date) = %d",
+            $user_id,
+            $month,
+            $year
+        ), ARRAY_A);
+        
+        $approved_days = 0;
+        $rejected_days = 0;
+        $submitted_days = count($reports);
+        
+        foreach ($reports as $report) {
+            if ($report['status'] == 'approved') {
+                $approved_days++;
+            } elseif ($report['status'] == 'rejected') {
+                $rejected_days++;
+            }
+        }
         
         $daily_rate = $settings['daily_rate'];
         $monthly_salary = $settings['monthly_salary'];
         
-        $missing_days = max(0, $working_days - $submitted_days);
+        $missing_days = max(0, $working_days - $approved_days);
         $total_deduction = $missing_days * $daily_rate;
         $net_salary = max(0, $monthly_salary - $total_deduction);
         
@@ -75,6 +92,8 @@ class Basmah_Staff_Reports_Salary {
             'monthly_salary' => $monthly_salary,
             'working_days' => $working_days,
             'submitted_days' => $submitted_days,
+            'approved_days' => $approved_days,
+            'rejected_days' => $rejected_days,
             'missing_days' => $missing_days,
             'daily_rate' => $daily_rate,
             'total_deduction' => $total_deduction,

@@ -76,8 +76,9 @@
                                     </span>
                                 </td>
                                 <td><?php echo esc_html(date('F j, Y g:i a', strtotime($report['created_at']))); ?></td>
-                                <td>
+                                <td style="display: flex; gap: 8px;">
                                     <a href="<?php echo esc_url($view_url); ?>" class="button button-small">View</a>
+                                    <a href="<?php echo add_query_arg('bsr_delete_report', $report['id']); ?>" class="button button-small" style="color: #c53030; border-color: #c53030;" onclick="return confirm('Are you sure you want to delete this report?');">Delete</a>
                                 </td>
                             </tr>
                         <?php endforeach; ?>

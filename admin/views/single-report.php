@@ -21,6 +21,12 @@
         </div>
     <?php endif; ?>
     
+    <?php if (isset($_GET['comment_required']) && $_GET['comment_required'] == 1): ?>
+        <div class="notice notice-error is-dismissible">
+            <p><strong>Error:</strong> A comment is required when rejecting a report!</p>
+        </div>
+    <?php endif; ?>
+    
     <div class="bsr-single-report">
         <div class="report-info-card">
             <h2>Employee Information</h2>

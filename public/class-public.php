@@ -65,11 +65,19 @@ class Basmah_Staff_Reports_Public {
             <div class="dashboard-section">
                 <h3>Monthly Summary</h3>
                 <div class="summary-cards">
-                    <div class="summary-card submitted">
+                    <div class="summary-card" style="background: linear-gradient(135deg, #ebf8ff 0%, #90cdf4 100%); border: 2px solid #4299e1;">
                         <p class="summary-number"><?php echo esc_html($salary_data['submitted_days']); ?></p>
                         <p class="summary-label">Days Submitted</p>
                     </div>
-                    <div class="summary-card missing">
+                    <div class="summary-card" style="background: linear-gradient(135deg, #c6f6d5 0%, #9ae6b4 100%); border: 2px solid #48bb78;">
+                        <p class="summary-number"><?php echo esc_html($salary_data['approved_days']); ?></p>
+                        <p class="summary-label">Days Approved</p>
+                    </div>
+                    <div class="summary-card" style="background: linear-gradient(135deg, #fed7d7 0%, #fc8181 100%); border: 2px solid #f56565;">
+                        <p class="summary-number"><?php echo esc_html($salary_data['rejected_days']); ?></p>
+                        <p class="summary-label">Days Rejected</p>
+                    </div>
+                    <div class="summary-card" style="background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e0 100%); border: 2px solid #a0aec0;">
                         <p class="summary-number"><?php echo esc_html($salary_data['missing_days']); ?></p>
                         <p class="summary-label">Days Missing</p>
                     </div>
