@@ -25,14 +25,13 @@ class Basmah_Staff_Reports_Public {
 
     public function render_bassmah_staff_dashboard() {
         if (!is_user_logged_in()) {
-            return '<p>Please log in to view your dashboard.</p>';
+            return '<p style="padding: 20px; background: #fff; border-radius: 8px; text-align: center;">Please log in to view your dashboard.</p>';
         }
 
         $user_id = get_current_user_id();
         $today = current_time('Y-m-d');
         $current_month = date('m');
         $current_year = date('Y');
-        $days_in_month = cal_days_in_month(CAL_GREGORIAN, $current_month, $current_year);
 
         global $wpdb;
         $table_name = $wpdb->prefix . 'staff_reports';
@@ -43,24 +42,12 @@ class Basmah_Staff_Reports_Public {
             $today
         ));
 
-        $monthly_reports = $wpdb->get_results($wpdb->prepare(
-            "SELECT DISTINCT report_date FROM $table_name WHERE user_id = %d AND MONTH(report_date) = %d AND YEAR(report_date) = %d",
-            $user_id,
-            $current_month,
-            $current_year
-        ), ARRAY_A);
-
-        $submitted_days = count($monthly_reports);
-        $working_days = $days_in_month;
-        $missing_days = $working_days - $submitted_days;
-
-        $daily_rate = 200;
-        $monthly_salary = $submitted_days * $daily_rate;
+        $salary_data = Basmah_Staff_Reports_Salary::calculate_salary($user_id, $current_month, $current_year);
 
         ob_start();
         ?>
         <div class="bsr-staff-dashboard">
-            <h2>Staff Dashboard</h2>
+            <h2>My Dashboard</h2>
 
             <div class="dashboard-section">
                 <h3>Today's Report Status</h3>
@@ -79,12 +66,16 @@ class Basmah_Staff_Reports_Public {
                 <h3>Monthly Summary</h3>
                 <div class="summary-cards">
                     <div class="summary-card submitted">
-                        <p class="summary-number"><?php echo esc_html($submitted_days); ?></p>
+                        <p class="summary-number"><?php echo esc_html($salary_data['submitted_days']); ?></p>
                         <p class="summary-label">Days Submitted</p>
                     </div>
                     <div class="summary-card missing">
-                        <p class="summary-number"><?php echo esc_html($missing_days); ?></p>
+                        <p class="summary-number"><?php echo esc_html($salary_data['missing_days']); ?></p>
                         <p class="summary-label">Days Missing</p>
+                    </div>
+                    <div class="summary-card">
+                        <p class="summary-number"><?php echo esc_html($salary_data['working_days']); ?></p>
+                        <p class="summary-label">Total Working Days</p>
                     </div>
                 </div>
             </div>
@@ -93,16 +84,12 @@ class Basmah_Staff_Reports_Public {
                 <h3>Salary Overview</h3>
                 <div class="salary-card">
                     <p class="salary-label">Current Month Earnings</p>
-                    <p class="salary-amount">$<?php echo number_format($monthly_salary, 2); ?></p>
-                    <p class="salary-details">Based on <?php echo esc_html($submitted_days); ?> working days at $<?php echo number_format($daily_rate, 2); ?>/day</p>
-                </div>
-            </div>
-
-            <div class="dashboard-section">
-                <h3>Quick Actions</h3>
-                <div class="action-buttons">
-                    <a href="#" class="btn btn-primary" onclick="document.querySelector('[data-shortcode=\"bassmah_report_form\"]').scrollIntoView({behavior: 'smooth'}); return false;">Submit Report</a>
-                    <a href="#" class="btn btn-secondary" onclick="document.querySelector('[data-shortcode=\"bsr_my_reports\"]').scrollIntoView({behavior: 'smooth'}); return false;">My Reports</a>
+                    <p class="salary-amount"><?php echo esc_html($salary_data['currency']); ?> <?php echo number_format($salary_data['net_salary'], 2); ?></p>
+                    <div style="margin-top: 20px; opacity: 0.95;">
+                        <p style="margin: 8px 0;">Monthly Salary: <?php echo esc_html($salary_data['currency']); ?> <?php echo number_format($salary_data['monthly_salary'], 2); ?></p>
+                        <p style="margin: 8px 0;">Daily Rate: <?php echo esc_html($salary_data['currency']); ?> <?php echo number_format($salary_data['daily_rate'], 2); ?></p>
+                        <p style="margin: 8px 0;">Total Deduction: <?php echo esc_html($salary_data['currency']); ?> <?php echo number_format($salary_data['total_deduction'], 2); ?></p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -124,17 +111,11 @@ class Basmah_Staff_Reports_Public {
 
     public function render_bassmah_my_reports() {
         if (!is_user_logged_in()) {
-            return '<p>Please log in to view your reports.</p>';
+            return '<p style="padding: 20px; background: #fff; border-radius: 8px; text-align: center;">Please log in to view your reports.</p>';
         }
 
         $user_id = get_current_user_id();
-        global $wpdb;
-        $table_name = $wpdb->prefix . 'staff_reports';
-
-        $reports = $wpdb->get_results($wpdb->prepare(
-            "SELECT * FROM $table_name WHERE user_id = %d ORDER BY report_date DESC",
-            $user_id
-        ), ARRAY_A);
+        $reports = Basmah_Staff_Reports_Reports::get_reports(array('user_id' => $user_id));
 
         ob_start();
         ?>
@@ -147,26 +128,20 @@ class Basmah_Staff_Reports_Public {
                     <thead>
                         <tr>
                             <th>Date</th>
-                            <th>Task Summary</th>
                             <th>Status</th>
+                            <th>Submitted At</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php foreach ($reports as $report): ?>
-                            <?php 
-                            $tasks = json_decode($report['tasks_json'], true);
-                            $task_summary = '';
-                            $status = 'N/A';
-                            if ($tasks && is_array($tasks)) {
-                                $first_task = $tasks[0];
-                                $task_summary = isset($first_task['task_description']) ? substr($first_task['task_description'], 0, 100) . '...' : '';
-                                $status = isset($first_task['status']) ? $first_task['status'] : 'N/A';
-                            }
-                            ?>
                             <tr>
                                 <td><?php echo esc_html(date('F j, Y', strtotime($report['report_date']))); ?></td>
-                                <td><?php echo esc_html($task_summary); ?></td>
-                                <td><span class="status-badge <?php echo sanitize_title($status); ?>"><?php echo esc_html($status); ?></span></td>
+                                <td>
+                                    <span class="status-badge <?php echo sanitize_title($report['status']); ?>">
+                                        <?php echo esc_html(ucfirst($report['status'])); ?>
+                                    </span>
+                                </td>
+                                <td><?php echo esc_html(date('F j, Y g:i a', strtotime($report['created_at']))); ?></td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
@@ -185,18 +160,13 @@ class Basmah_Staff_Reports_Public {
 
     public function render_bassmah_report_form() {
         if (!is_user_logged_in()) {
-            return '<p>Please log in to submit a report.</p>';
+            return '<p style="padding: 20px; background: #fff; border-radius: 8px; text-align: center;">Please log in to submit a report.</p>';
         }
 
         $user_id = get_current_user_id();
+        $current_user = wp_get_current_user();
         $report_date = current_time('Y-m-d');
-        global $wpdb;
-        $table_name = $wpdb->prefix . 'staff_reports';
-        $existing_report = $wpdb->get_var($wpdb->prepare(
-            "SELECT id FROM $table_name WHERE user_id = %d AND report_date = %s",
-            $user_id,
-            $report_date
-        ));
+        $existing_report = Basmah_Staff_Reports_Reports::report_exists($user_id, $report_date);
 
         ob_start();
         ?>
@@ -212,37 +182,72 @@ class Basmah_Staff_Reports_Public {
                     <?php wp_nonce_field('bassmah_report_submit', 'bassmah_report_nonce'); ?>
                     
                     <div class="form-group">
-                        <label for="task_category">Task Category:</label>
-                        <select id="task_category" name="task_category" required>
-                            <option value="">Select Category</option>
-                            <option value="Development">Development</option>
-                            <option value="Design">Design</option>
-                            <option value="Testing">Testing</option>
-                            <option value="Documentation">Documentation</option>
-                            <option value="Meeting">Meeting</option>
-                            <option value="Other">Other</option>
-                        </select>
+                        <label>Employee Name</label>
+                        <input type="text" value="<?php echo esc_attr($current_user->display_name); ?>" readonly>
                     </div>
                     
                     <div class="form-group">
-                        <label for="task_description">Task Description:</label>
-                        <textarea id="task_description" name="task_description" rows="4" required></textarea>
+                        <label>Role</label>
+                        <input type="text" value="<?php echo esc_attr(implode(', ', $current_user->roles)); ?>" readonly>
                     </div>
                     
                     <div class="form-group">
-                        <label for="status">Status:</label>
-                        <select id="status" name="status" required>
-                            <option value="">Select Status</option>
-                            <option value="Not Started">Not Started</option>
-                            <option value="In Progress">In Progress</option>
-                            <option value="Completed">Completed</option>
-                            <option value="On Hold">On Hold</option>
-                        </select>
+                        <label>Date</label>
+                        <input type="date" name="report_date" value="<?php echo esc_attr($report_date); ?>" readonly>
                     </div>
                     
-                    <div class="form-group">
-                        <label for="next_action">Next Action:</label>
-                        <textarea id="next_action" name="next_action" rows="3" required></textarea>
+                    <div id="tasks_container">
+                        <div class="task-item-form" style="background: #f7fafc; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                            <h4 style="margin-top: 0; margin-bottom: 15px; color: #2d3748;">Task 1</h4>
+                            
+                            <div class="form-group">
+                                <label for="task_category_1">Task Category:</label>
+                                <select id="task_category_1" name="tasks[0][task_category]" required>
+                                    <option value="">Select Category</option>
+                                    <option value="Development">Development</option>
+                                    <option value="Design">Design</option>
+                                    <option value="Testing">Testing</option>
+                                    <option value="Documentation">Documentation</option>
+                                    <option value="Meeting">Meeting</option>
+                                    <option value="Client Follow-up">Client Follow-up</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="task_description_1">Task Description:</label>
+                                <textarea id="task_description_1" name="tasks[0][task_description]" rows="3" required></textarea>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="status_1">Completion Status:</label>
+                                <select id="status_1" name="tasks[0][status]" required>
+                                    <option value="">Select Status</option>
+                                    <option value="Completed">Completed</option>
+                                    <option value="In Progress">In Progress</option>
+                                    <option value="Not Completed">Not Completed</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="next_action_1">Next Action:</label>
+                                <textarea id="next_action_1" name="tasks[0][next_action]" rows="2" required></textarea>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="manager_assigned_task_1">Manager Assigned Task:</label>
+                                <textarea id="manager_assigned_task_1" name="tasks[0][manager_assigned_task]" rows="2"></textarea>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="additional_notes_1">Additional Notes:</label>
+                                <textarea id="additional_notes_1" name="tasks[0][additional_notes]" rows="2"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group" style="text-align: right;">
+                        <button type="button" id="add_task_btn" class="button" style="margin-right: 10px;">Add Another Task</button>
                     </div>
                     
                     <div class="form-group">
@@ -251,6 +256,38 @@ class Basmah_Staff_Reports_Public {
                 </form>
             <?php endif; ?>
         </div>
+        
+        <script>
+        jQuery(document).ready(function($) {
+            var taskCount = 1;
+            
+            $('#add_task_btn').click(function() {
+                taskCount++;
+                var newTask = $('.task-item-form:first').clone();
+                newTask.find('h4').text('Task ' + taskCount);
+                newTask.find('input, select, textarea').each(function() {
+                    var name = $(this).attr('name');
+                    if (name) {
+                        name = name.replace(/\[0\]/, '[' + (taskCount - 1) + ']');
+                        $(this).attr('name', name);
+                    }
+                    var id = $(this).attr('id');
+                    if (id) {
+                        id = id.replace(/_1$/, '_' + taskCount);
+                        $(this).attr('id', id);
+                    }
+                    $(this).val('');
+                });
+                
+                newTask.append('<button type="button" class="remove-task-btn" style="margin-top: 15px; padding: 8px 16px; background: #f56565; color: white; border: none; border-radius: 6px; cursor: pointer;">Remove Task</button>');
+                $('#tasks_container').append(newTask);
+            });
+            
+            $(document).on('click', '.remove-task-btn', function() {
+                $(this).closest('.task-item-form').remove();
+            });
+        });
+        </script>
         <?php
         return ob_get_clean();
     }
@@ -269,49 +306,35 @@ class Basmah_Staff_Reports_Public {
         }
 
         $user_id = get_current_user_id();
-        $report_date = current_time('Y-m-d');
-        $tasks = array(
-            array(
-                'task_category' => sanitize_text_field($_POST['task_category']),
-                'task_description' => sanitize_textarea_field($_POST['task_description']),
-                'status' => sanitize_text_field($_POST['status']),
-                'next_action' => sanitize_textarea_field($_POST['next_action'])
-            )
-        );
+        $report_date = sanitize_text_field($_POST['report_date']);
+        $tasks = isset($_POST['tasks']) ? $_POST['tasks'] : array();
+        
+        $sanitized_tasks = array();
+        foreach ($tasks as $task) {
+            $sanitized_tasks[] = array(
+                'task_category' => sanitize_text_field($task['task_category']),
+                'task_description' => sanitize_textarea_field($task['task_description']),
+                'status' => sanitize_text_field($task['status']),
+                'next_action' => sanitize_textarea_field($task['next_action']),
+                'manager_assigned_task' => sanitize_textarea_field($task['manager_assigned_task']),
+                'additional_notes' => sanitize_textarea_field($task['additional_notes'])
+            );
+        }
 
-        global $wpdb;
-        $table_name = $wpdb->prefix . 'staff_reports';
-
-        $existing_report = $wpdb->get_var($wpdb->prepare(
-            "SELECT id FROM $table_name WHERE user_id = %d AND report_date = %s",
-            $user_id,
-            $report_date
-        ));
+        $existing_report = Basmah_Staff_Reports_Reports::report_exists($user_id, $report_date);
 
         if ($existing_report) {
             wp_redirect(add_query_arg('duplicate_report', '1'));
             exit;
         }
 
-        $wpdb->insert(
-            $table_name,
-            array(
-                'user_id' => $user_id,
-                'report_date' => $report_date,
-                'tasks_json' => json_encode($tasks),
-                'created_at' => current_time('mysql')
-            ),
-            array(
-                '%d',
-                '%s',
-                '%s',
-                '%s'
-            )
-        );
+        Basmah_Staff_Reports_Reports::create_report(array(
+            'user_id' => $user_id,
+            'report_date' => $report_date,
+            'tasks' => $sanitized_tasks
+        ));
 
         wp_redirect(add_query_arg('report_submitted', '1'));
         exit;
     }
 }
-
-
