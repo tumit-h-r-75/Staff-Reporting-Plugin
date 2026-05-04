@@ -1,5 +1,10 @@
+* {
+    box-sizing: border-box;
+}
+
 .bsr-admin-container {
-    max-width: 1200px;
+    width: 100%;
+    max-width: 100%;
     margin: 20px 0;
 }
 
@@ -37,6 +42,7 @@
 }
 
 .bsr-single-report {
+    width: 100%;
     margin-top: 20px;
 }
 
@@ -76,6 +82,8 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 10px;
+    flex-wrap: wrap;
+    gap: 10px;
 }
 
 .task-category {
@@ -102,4 +110,39 @@
     margin-bottom: 5px;
     font-weight: 600;
     color: #2d3748;
+}
+
+.wp-list-table {
+    overflow-x: auto;
+    display: block;
+}
+
+@media (max-width: 768px) {
+    .report-info-card {
+        padding: 15px;
+    }
+
+    .task-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .wp-list-table {
+        font-size: 0.9rem;
+    }
+
+    .wp-list-table th,
+    .wp-list-table td {
+        padding: 8px 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .report-info-card h2 {
+        font-size: 1.1rem;
+    }
+
+    .task-item {
+        padding: 12px;
+    }
 }
