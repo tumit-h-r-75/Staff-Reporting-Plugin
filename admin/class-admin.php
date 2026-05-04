@@ -72,6 +72,17 @@ class Basmah_Staff_Reports_Admin {
     }
     
     public function render_all_reports() {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'staff_reports';
+        $users_table = $wpdb->prefix . 'users';
+        
+        $reports = $wpdb->get_results("
+            SELECT r.*, u.display_name, u.user_email
+            FROM $table_name r
+            JOIN $users_table u ON r.user_id = u.ID
+            ORDER BY r.report_date DESC
+        ", ARRAY_A);
+        
         require_once BASMAH_STAFF_REPORTS_PLUGIN_DIR . 'admin/views/all-reports.php';
     }
     

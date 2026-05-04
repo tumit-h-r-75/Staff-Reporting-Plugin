@@ -2,3 +2,36 @@
     max-width: 1200px;
     margin: 20px 0;
 }
+
+.status-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.status-badge.not-started {
+    background: #fed7d7;
+    color: #c53030;
+}
+
+.status-badge.in-progress {
+    background: #feebc8;
+    color: #c05621;
+}
+
+.status-badge.completed {
+    background: #c6f6d5;
+    color: #276749;
+}
+
+.status-badge.on-hold {
+    background: #e2e8f0;
+    color: #4a5568;
+}
+
+.status-badge.n-a {
+    background: #e2e8f0;
+    color: #4a5568;
+}
