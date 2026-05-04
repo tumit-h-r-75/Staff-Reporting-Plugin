@@ -202,15 +202,11 @@ class Basmah_Staff_Reports_Public {
         ?>
         <div class="bsr-report-form">
             <h2>Submit Daily Work Report</h2>
-            <?php if (isset($_GET['report_submitted']) && $_GET['report_submitted'] == 1): ?>
-                <p style="color: green; font-weight: bold;">Report submitted successfully!</p>
-            <?php endif; ?>
-            <?php if (isset($_GET['duplicate_report']) && $_GET['duplicate_report'] == 1): ?>
-                <p style="color: red; font-weight: bold;">You have already submitted a report for today!</p>
-            <?php endif; ?>
             
             <?php if ($existing_report): ?>
-                <p style="color: orange; font-weight: bold;">You have already submitted a report for today (<?php echo esc_html($report_date); ?>).</p>
+                <div class="notification-popup warning">
+                    <p><strong>⚠️ You have already submitted a report for today (<?php echo esc_html($report_date); ?>).</strong></p>
+                </div>
             <?php else: ?>
                 <form method="post" action="">
                     <?php wp_nonce_field('bassmah_report_submit', 'bassmah_report_nonce'); ?>

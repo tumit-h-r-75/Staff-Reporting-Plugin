@@ -2,54 +2,76 @@
     box-sizing: border-box;
 }
 
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    line-height: 1.6;
+    color: #1a202c;
+}
+
 .bsr-public-container {
     width: 100%;
-    max-width: 1200px;
-    margin: 20px auto;
-    padding: 0 15px;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 20px;
 }
 
 .bsr-staff-dashboard {
     width: 100%;
-    max-width: 1200px;
-    margin: 20px auto;
-    padding: 20px;
-    background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    max-width: 1400px;
+    margin: 30px auto;
+    padding: 30px;
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.bsr-staff-dashboard h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0 0 30px 0;
+    color: #1a202c;
 }
 
 .dashboard-section {
-    margin-bottom: 30px;
+    margin-bottom: 35px;
 }
 
 .dashboard-section h3 {
-    margin-bottom: 15px;
+    font-size: 1.35rem;
+    font-weight: 600;
+    margin: 0 0 20px 0;
     color: #2d3748;
-    border-bottom: 2px solid #e2e8f0;
-    padding-bottom: 8px;
+    padding-bottom: 12px;
+    border-bottom: 3px solid #e2e8f0;
 }
 
 .status-card {
-    padding: 20px;
-    border-radius: 8px;
+    padding: 30px;
+    border-radius: 12px;
     text-align: center;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.status-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
 }
 
 .status-card.submitted {
-    background: #c6f6d5;
+    background: linear-gradient(135deg, #c6f6d5 0%, #9ae6b4 100%);
     border: 2px solid #48bb78;
 }
 
 .status-card.missing {
-    background: #fed7d7;
+    background: linear-gradient(135deg, #fed7d7 0%, #fc8181 100%);
     border: 2px solid #f56565;
 }
 
 .status-text {
-    font-size: 1.5rem;
-    font-weight: bold;
-    margin: 0 0 8px 0;
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin: 0 0 10px 0;
+    letter-spacing: -0.5px;
 }
 
 .status-text.submitted {
@@ -61,148 +83,177 @@
 }
 
 .status-date {
-    font-size: 1rem;
+    font-size: 1.05rem;
     color: #4a5568;
     margin: 0;
+    font-weight: 500;
 }
 
 .summary-cards {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+}
+
+.summary-card {
+    flex: 1 1 250px;
+    min-width: 250px;
+    padding: 30px;
+    border-radius: 12px;
+    text-align: center;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.summary-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+}
+
+.summary-card.submitted {
+    background: linear-gradient(135deg, #ebf8ff 0%, #90cdf4 100%);
+    border: 2px solid #4299e1;
+}
+
+.summary-card.missing {
+    background: linear-gradient(135deg, #fff5f5 0%, #feb2b2 100%);
+    border: 2px solid #fc8181;
+}
+
+.summary-number {
+    font-size: 3.5rem;
+    font-weight: 800;
+    color: #1a202c;
+    margin: 0 0 8px 0;
+    line-height: 1;
+}
+
+.summary-label {
+    font-size: 1.1rem;
+    color: #4a5568;
+    margin: 0;
+    font-weight: 600;
+}
+
+.salary-card {
+    padding: 40px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 16px;
+    text-align: center;
+    color: white;
+    box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
+}
+
+.salary-label {
+    font-size: 1.15rem;
+    margin: 0 0 15px 0;
+    opacity: 0.95;
+    font-weight: 500;
+}
+
+.salary-amount {
+    font-size: 4rem;
+    font-weight: 800;
+    margin: 0 0 15px 0;
+    letter-spacing: -1px;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.salary-details {
+    font-size: 1rem;
+    opacity: 0.9;
+    margin: 0;
+    font-weight: 500;
+}
+
+.action-buttons {
     display: flex;
     gap: 20px;
     flex-wrap: wrap;
 }
 
-.summary-card {
+.btn {
     flex: 1 1 200px;
     min-width: 200px;
-    padding: 20px;
-    border-radius: 8px;
-    text-align: center;
-}
-
-.summary-card.submitted {
-    background: #ebf8ff;
-    border: 2px solid #4299e1;
-}
-
-.summary-card.missing {
-    background: #fff5f5;
-    border: 2px solid #fc8181;
-}
-
-.summary-number {
-    font-size: 2.5rem;
-    font-weight: bold;
-    color: #2d3748;
-    margin: 0 0 5px 0;
-}
-
-.summary-label {
-    font-size: 1rem;
-    color: #4a5568;
-    margin: 0;
-}
-
-.salary-card {
-    padding: 25px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 8px;
-    text-align: center;
-    color: white;
-}
-
-.salary-label {
-    font-size: 1rem;
-    margin: 0 0 10px 0;
-    opacity: 0.9;
-}
-
-.salary-amount {
-    font-size: 2.5rem;
-    font-weight: bold;
-    margin: 0 0 10px 0;
-}
-
-.salary-details {
-    font-size: 0.9rem;
-    opacity: 0.8;
-    margin: 0;
-}
-
-.action-buttons {
-    display: flex;
-    gap: 15px;
-    flex-wrap: wrap;
-}
-
-.btn {
-    flex: 1 1 150px;
-    min-width: 150px;
-    padding: 15px 25px;
+    padding: 18px 30px;
     border: none;
-    border-radius: 6px;
-    font-size: 1rem;
+    border-radius: 12px;
+    font-size: 1.05rem;
     font-weight: 600;
     cursor: pointer;
     text-align: center;
     text-decoration: none;
     display: inline-block;
-    transition: transform 0.2s, box-shadow 0.2s;
+    transition: all 0.3s ease;
+    letter-spacing: 0.3px;
 }
 
 .btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.btn:active {
+    transform: translateY(-1px);
 }
 
 .btn-primary {
-    background: #4299e1;
+    background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
     color: white;
 }
 
 .btn-primary:hover {
-    background: #3182ce;
+    background: linear-gradient(135deg, #3182ce 0%, #2b6cb0 100%);
 }
 
 .btn-secondary {
-    background: #718096;
+    background: linear-gradient(135deg, #718096 0%, #4a5568 100%);
     color: white;
 }
 
 .btn-secondary:hover {
-    background: #4a5568;
+    background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
 }
 
 .bsr-report-form {
     width: 100%;
-    max-width: 800px;
-    margin: 20px auto;
-    padding: 25px;
-    background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    max-width: 900px;
+    margin: 30px auto;
+    padding: 40px;
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.bsr-report-form h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0 0 30px 0;
+    color: #1a202c;
 }
 
 .form-group {
-    margin-bottom: 20px;
+    margin-bottom: 28px;
 }
 
 .form-group label {
     display: block;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
     font-weight: 600;
     color: #2d3748;
+    font-size: 1rem;
 }
 
 .form-group input,
 .form-group select,
 .form-group textarea {
     width: 100%;
-    padding: 10px 12px;
+    padding: 14px 18px;
     border: 2px solid #e2e8f0;
-    border-radius: 6px;
+    border-radius: 10px;
     font-size: 1rem;
     box-sizing: border-box;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    font-family: inherit;
 }
 
 .form-group input:focus,
@@ -210,70 +261,94 @@
 .form-group textarea:focus {
     outline: none;
     border-color: #4299e1;
+    box-shadow: 0 0 0 4px rgba(66, 153, 225, 0.1);
 }
 
 .form-group button[type="submit"] {
     width: 100%;
-    padding: 12px 25px;
-    background: #48bb78;
+    padding: 16px 30px;
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
     color: white;
     border: none;
-    border-radius: 6px;
-    font-size: 1rem;
+    border-radius: 10px;
+    font-size: 1.1rem;
     font-weight: 600;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: all 0.3s ease;
+    letter-spacing: 0.3px;
 }
 
 .form-group button[type="submit"]:hover {
-    background: #38a169;
+    background: linear-gradient(135deg, #38a169 0%, #276749 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(72, 187, 120, 0.3);
 }
 
 .bsr-my-reports {
     width: 100%;
-    max-width: 1200px;
-    margin: 20px auto;
-    padding: 25px;
-    background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    max-width: 1400px;
+    margin: 30px auto;
+    padding: 30px;
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.bsr-my-reports h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0 0 30px 0;
+    color: #1a202c;
 }
 
 .reports-table {
     width: 100%;
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0;
     margin-top: 20px;
-    overflow-x: auto;
-    display: block;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }
 
 .reports-table thead {
-    background: #4299e1;
+    background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
     color: white;
 }
 
 .reports-table th,
 .reports-table td {
-    padding: 12px 15px;
+    padding: 18px 20px;
     text-align: left;
     border-bottom: 1px solid #e2e8f0;
-    white-space: nowrap;
 }
 
 .reports-table th {
-    font-weight: 600;
+    font-weight: 700;
+    font-size: 0.95rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.reports-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.reports-table tbody tr {
+    transition: background-color 0.2s;
 }
 
 .reports-table tbody tr:hover {
-    background: #f7fafc;
+    background-color: #f7fafc;
 }
 
 .status-badge {
     display: inline-block;
-    padding: 4px 12px;
-    border-radius: 12px;
-    font-size: 0.85rem;
-    font-weight: 500;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-transform: capitalize;
 }
 
 .status-badge.not-started {
@@ -301,19 +376,82 @@
     color: #4a5568;
 }
 
+.notification-popup {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 20px 30px;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    z-index: 9999;
+    animation: slideIn 0.3s ease;
+    max-width: 400px;
+}
+
+.notification-popup.success {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    color: white;
+}
+
+.notification-popup.error {
+    background: linear-gradient(135deg, #f56565 0%, #c53030 100%);
+    color: white;
+}
+
+.notification-popup.warning {
+    background: linear-gradient(135deg, #ed8936 0%, #c05621 100%);
+    color: white;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@media (max-width: 1024px) {
+    .bsr-staff-dashboard,
+    .bsr-report-form,
+    .bsr-my-reports {
+        padding: 25px;
+        margin: 20px;
+    }
+
+    .summary-cards {
+        gap: 16px;
+    }
+
+    .salary-amount {
+        font-size: 3rem;
+    }
+}
+
 @media (max-width: 768px) {
     .bsr-staff-dashboard,
     .bsr-report-form,
     .bsr-my-reports {
-        padding: 15px;
+        padding: 20px;
+        margin: 15px;
+        border-radius: 12px;
+    }
+
+    .bsr-staff-dashboard h2,
+    .bsr-report-form h2,
+    .bsr-my-reports h2 {
+        font-size: 1.6rem;
     }
 
     .summary-cards {
         flex-direction: column;
     }
 
-    .salary-amount {
-        font-size: 2rem;
+    .summary-card {
+        min-width: 100%;
     }
 
     .action-buttons {
@@ -322,21 +460,50 @@
 
     .btn {
         width: 100%;
+        min-width: 100%;
+    }
+
+    .salary-amount {
+        font-size: 2.5rem;
     }
 
     .reports-table {
         font-size: 0.9rem;
+        display: block;
+        overflow-x: auto;
     }
 
     .reports-table th,
     .reports-table td {
-        padding: 8px 10px;
+        padding: 12px 15px;
+        white-space: nowrap;
+    }
+
+    .status-number {
+        font-size: 2.5rem;
+    }
+
+    .status-text {
+        font-size: 1.4rem;
     }
 }
 
 @media (max-width: 480px) {
+    .bsr-staff-dashboard,
+    .bsr-report-form,
+    .bsr-my-reports {
+        padding: 16px;
+        margin: 10px;
+    }
+
+    .bsr-staff-dashboard h2,
+    .bsr-report-form h2,
+    .bsr-my-reports h2 {
+        font-size: 1.4rem;
+    }
+
     .summary-number {
-        font-size: 2rem;
+        font-size: 2.2rem;
     }
 
     .status-text {
@@ -344,6 +511,16 @@
     }
 
     .salary-amount {
-        font-size: 1.8rem;
+        font-size: 2rem;
+    }
+
+    .dashboard-section h3 {
+        font-size: 1.15rem;
+    }
+
+    .notification-popup {
+        left: 10px;
+        right: 10px;
+        max-width: none;
     }
 }
