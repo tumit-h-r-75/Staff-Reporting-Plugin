@@ -20,6 +20,7 @@ class Bassmah_Staff_Reports {
         $this->define_admin_hooks();
         $this->define_public_hooks();
         $this->define_api_hooks();
+        $this->define_login_redirect_hook();
     }
 
     private function load_dependencies() {
@@ -58,6 +59,21 @@ class Bassmah_Staff_Reports {
         new Basmah_Staff_Reports_API_Reports();
         new Basmah_Staff_Reports_API_Salary();
         new Basmah_Staff_Reports_API_Auth();
+    }
+
+    private function define_login_redirect_hook() {
+        add_filter('login_redirect', array($this, 'handle_login_redirect'), 10, 3);
+    }
+
+    public function handle_login_redirect($redirect_to, $request, $user) {
+        if (isset($user->roles) && is_array($user->roles)) {
+            if (in_array('basmah_manager', $user->roles) || current_user_can('manage_options')) {
+                return admin_url('admin.php?page=bsr-all-reports');
+            } elseif (in_array('basmah_staff', $user->roles)) {
+                return home_url('/dashboard');
+            }
+        }
+        return $redirect_to;
     }
 
     public function run() {
