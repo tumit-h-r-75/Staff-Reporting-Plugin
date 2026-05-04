@@ -216,3 +216,71 @@
 .form-group button[type="submit"]:hover {
     background: #38a169;
 }
+
+.bsr-my-reports {
+    max-width: 900px;
+    margin: 20px auto;
+    padding: 25px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.reports-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.reports-table thead {
+    background: #4299e1;
+    color: white;
+}
+
+.reports-table th,
+.reports-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.reports-table th {
+    font-weight: 600;
+}
+
+.reports-table tbody tr:hover {
+    background: #f7fafc;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.status-badge.not-started {
+    background: #fed7d7;
+    color: #c53030;
+}
+
+.status-badge.in-progress {
+    background: #feebc8;
+    color: #c05621;
+}
+
+.status-badge.completed {
+    background: #c6f6d5;
+    color: #276749;
+}
+
+.status-badge.on-hold {
+    background: #e2e8f0;
+    color: #4a5568;
+}
+
+.status-badge.n-a {
+    background: #e2e8f0;
+    color: #4a5568;
+}

@@ -6,6 +6,7 @@ class Basmah_Staff_Reports_Public {
         add_shortcode('bsr_report_form', array($this, 'render_report_form'));
         add_shortcode('bassmah_report_form', array($this, 'render_bassmah_report_form'));
         add_shortcode('bsr_my_reports', array($this, 'render_my_reports'));
+        add_shortcode('bassmah_my_reports', array($this, 'render_bassmah_my_reports'));
         add_shortcode('bsr_salary_view', array($this, 'render_salary_view'));
         add_action('wp_enqueue_scripts', array($this, 'enqueue_public_assets'));
         add_action('init', array($this, 'handle_report_submission'));
@@ -118,6 +119,61 @@ class Basmah_Staff_Reports_Public {
     public function render_my_reports() {
         ob_start();
         require_once BASMAH_STAFF_REPORTS_PLUGIN_DIR . 'public/views/my-reports.php';
+        return ob_get_clean();
+    }
+
+    public function render_bassmah_my_reports() {
+        if (!is_user_logged_in()) {
+            return '<p>Please log in to view your reports.</p>';
+        }
+
+        $user_id = get_current_user_id();
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'staff_reports';
+
+        $reports = $wpdb->get_results($wpdb->prepare(
+            "SELECT * FROM $table_name WHERE user_id = %d ORDER BY report_date DESC",
+            $user_id
+        ), ARRAY_A);
+
+        ob_start();
+        ?>
+        <div class="bsr-my-reports">
+            <h2>My Reports</h2>
+            <?php if (empty($reports)): ?>
+                <p>No reports found.</p>
+            <?php else: ?>
+                <table class="reports-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Task Summary</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($reports as $report): ?>
+                            <?php 
+                            $tasks = json_decode($report['tasks_json'], true);
+                            $task_summary = '';
+                            $status = 'N/A';
+                            if ($tasks && is_array($tasks)) {
+                                $first_task = $tasks[0];
+                                $task_summary = isset($first_task['task_description']) ? substr($first_task['task_description'], 0, 100) . '...' : '';
+                                $status = isset($first_task['status']) ? $first_task['status'] : 'N/A';
+                            }
+                            ?>
+                            <tr>
+                                <td><?php echo esc_html(date('F j, Y', strtotime($report['report_date']))); ?></td>
+                                <td><?php echo esc_html($task_summary); ?></td>
+                                <td><span class="status-badge <?php echo sanitize_title($status); ?>"><?php echo esc_html($status); ?></span></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php endif; ?>
+        </div>
+        <?php
         return ob_get_clean();
     }
     
