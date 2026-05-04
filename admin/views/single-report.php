@@ -1,7 +1,7 @@
 <div class="wrap">
     <h1>Report Details</h1>
     
-    <a href="<?php echo admin_url('admin.php?page=bsr-all-reports'); ?>" class="button">&larr; Back to All Reports</a>
+    <a href="<?php echo admin_url('admin.php?page=bsr-all-reports'); ?>" class="button" style="margin-bottom: 24px; padding: 12px 24px; border-radius: 10px;">&larr; Back to All Reports</a>
     
     <?php if (isset($_GET['comment_saved']) && $_GET['comment_saved'] == 1): ?>
         <div class="notice notice-success is-dismissible">
@@ -75,9 +75,9 @@
         </div>
         
         <?php if ($report['manager_comment']): ?>
-            <div class="report-info-card">
+            <div class="report-info-card" style="border-left: 4px solid #f56565;">
                 <h2>Manager Comment</h2>
-                <p style="background: #f7fafc; padding: 15px; border-radius: 8px; border-left: 4px solid #4299e1; margin: 0;">
+                <p style="background: #fed7d7; padding: 20px; border-radius: 10px; margin: 0; font-size: 1.1rem; line-height: 1.8;">
                     <?php echo esc_html($report['manager_comment']); ?>
                 </p>
             </div>
@@ -85,42 +85,74 @@
         
         <div class="report-info-card">
             <h2>Actions</h2>
-            <div style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 25px;">
+            
+            <div id="reject_comment_container" style="display: none; background: #fff5f5; padding: 24px; border-radius: 12px; margin-bottom: 24px; border: 2px solid #feb2b2;">
+                <h3 style="margin-top: 0; margin-bottom: 18px; color: #c53030; font-size: 1.2rem;">Rejection Comment (Required)</h3>
+                <form method="post" action="">
+                    <?php wp_nonce_field('bsr_reject_report', 'bsr_reject_nonce'); ?>
+                    <input type="hidden" name="report_id" value="<?php echo esc_attr($report['id']); ?>">
+                    
+                    <div class="form-field">
+                        <label for="reject_manager_comment">Reason for Rejection:</label>
+                        <textarea id="reject_manager_comment" name="manager_comment" rows="4" required style="width: 100%; border: 2px solid #feb2b2; background: #fff;"></textarea>
+                    </div>
+                    
+                    <p class="submit" style="margin-top: 20px; padding-top: 0;">
+                        <button type="submit" name="bsr_reject_report" class="button" style="background: linear-gradient(135deg, #f56565 0%, #c53030 100%); color: white; border-color: #c53030; padding: 12px 30px;">
+                            Confirm Reject
+                        </button>
+                        <button type="button" id="cancel_reject_btn" class="button" style="margin-left: 12px;">Cancel</button>
+                    </p>
+                </form>
+            </div>
+            
+            <div style="display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 24px;">
                 <?php if ($report['status'] !== 'approved'): ?>
                     <form method="post" action="">
                         <?php wp_nonce_field('bsr_approve_report', 'bsr_approve_nonce'); ?>
                         <input type="hidden" name="report_id" value="<?php echo esc_attr($report['id']); ?>">
-                        <button type="submit" name="bsr_approve_report" class="button button-primary" style="background: linear-gradient(135deg, #48bb78 0%, #38a169 100%); border-color: #38a169;">
+                        <button type="submit" name="bsr_approve_report" class="button button-primary" style="background: linear-gradient(135deg, #48bb78 0%, #38a169 100%); border-color: #38a169; padding: 14px 36px; font-size: 1.05rem;">
                             Approve Report
                         </button>
                     </form>
                 <?php endif; ?>
                 
                 <?php if ($report['status'] !== 'rejected'): ?>
-                    <form method="post" action="">
-                        <?php wp_nonce_field('bsr_reject_report', 'bsr_reject_nonce'); ?>
-                        <input type="hidden" name="report_id" value="<?php echo esc_attr($report['id']); ?>">
-                        <button type="submit" name="bsr_reject_report" class="button" style="background: linear-gradient(135deg, #f56565 0%, #c53030 100%); color: white; border-color: #c53030;">
-                            Reject Report
-                        </button>
-                    </form>
+                    <button type="button" id="show_reject_btn" class="button" style="background: linear-gradient(135deg, #f56565 0%, #c53030 100%); color: white; border-color: #c53030; padding: 14px 36px; font-size: 1.05rem;">
+                        Reject Report
+                    </button>
                 <?php endif; ?>
             </div>
             
-            <h3 style="margin-bottom: 15px;">Add Comment</h3>
+            <h3 style="margin-bottom: 18px; font-size: 1.2rem; color: #2d3748;">Add/Edit Comment</h3>
             <form method="post" action="">
                 <?php wp_nonce_field('bsr_save_comment', 'bsr_comment_nonce'); ?>
                 <input type="hidden" name="report_id" value="<?php echo esc_attr($report['id']); ?>">
                 
                 <div class="form-field">
                     <label for="manager_comment">Comment:</label>
-                    <textarea id="manager_comment" name="manager_comment" rows="4" style="width: 100%;"><?php echo esc_textarea($report['manager_comment']); ?></textarea>
+                    <textarea id="manager_comment" name="manager_comment" rows="5" style="width: 100%;"><?php echo esc_textarea($report['manager_comment']); ?></textarea>
                 </div>
                 
                 <p class="submit">
-                    <button type="submit" name="bsr_save_comment" class="button button-primary">Save Comment</button>
+                    <button type="submit" name="bsr_save_comment" class="button button-primary" style="padding: 12px 30px;">Save Comment</button>
                 </p>
             </form>
         </div>
     </div>
+    
+    <script>
+    jQuery(document).ready(function($) {
+        $('#show_reject_btn').click(function() {
+            $('#reject_comment_container').slideDown(300);
+            $('#show_reject_btn').hide();
+        });
+        
+        $('#cancel_reject_btn').click(function() {
+            $('#reject_comment_container').slideUp(300);
+            $('#show_reject_btn').show();
+            $('#reject_manager_comment').val('');
+        });
+    });
+    </script>
 </div>

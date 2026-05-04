@@ -52,7 +52,7 @@
             <?php else: ?>
                 <table class="wp-list-table widefat fixed striped">
                     <thead>
-                        <tr>
+                        <tr class="dh-tabil">
                             <th>ID</th>
                             <th>Employee Name</th>
                             <th>Date</th>
@@ -66,7 +66,7 @@
                             <?php 
                             $view_url = admin_url('admin.php?page=bsr-single-report&report_id=' . $report['id']);
                             ?>
-                            <tr>
+                            <tr class="dh-tabil">
                                 <td><?php echo esc_html($report['id']); ?></td>
                                 <td><strong><?php echo esc_html($report['display_name']); ?></strong></td>
                                 <td><?php echo esc_html(date('F j, Y', strtotime($report['report_date']))); ?></td>

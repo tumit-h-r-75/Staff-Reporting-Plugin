@@ -175,17 +175,35 @@ class Basmah_Staff_Reports_Public {
         $current_user = wp_get_current_user();
         $report_date = current_time('Y-m-d');
         $existing_report = Basmah_Staff_Reports_Reports::report_exists($user_id, $report_date);
+        
+        $report = null;
+        if ($existing_report) {
+            $report = Basmah_Staff_Reports_Reports::get_report($existing_report);
+        }
 
         ob_start();
         ?>
         <div class="bsr-report-form">
             <h2>Submit Daily Work Report</h2>
             
-            <?php if ($existing_report): ?>
-                <div class="notification-popup warning">
-                    <p><strong>⚠️ You have already submitted a report for today (<?php echo esc_html($report_date); ?>).</strong></p>
+            <?php if ($existing_report && $report): ?>
+                <div class="notification-popup" style="border-left: 4px solid <?php echo $report['status'] == 'approved' ? '#48bb78' : ($report['status'] == 'rejected' ? '#f56565' : '#ed8936'); ?>; background: <?php echo $report['status'] == 'approved' ? '#c6f6d5' : ($report['status'] == 'rejected' ? '#fed7d7' : '#feebc8'); ?>; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                    <p style="margin: 0; font-size: 1.05rem; font-weight: 600; color: <?php echo $report['status'] == 'approved' ? '#276749' : ($report['status'] == 'rejected' ? '#c53030' : '#c05621'); ?>;">
+                        <?php if ($report['status'] == 'pending'): ?>
+                            ⏳ Your Work Is Waiting For Admin Check
+                        <?php elseif ($report['status'] == 'approved'): ?>
+                            ✅ Your Work Has Been Approved!
+                        <?php elseif ($report['status'] == 'rejected'): ?>
+                            ❌ Your Work Has Been Rejected
+                        <?php endif; ?>
+                    </p>
+                    <?php if ($report['manager_comment']): ?>
+                        <p style="margin-top: 12px; font-size: 1rem; color: #2d3748;">
+                            <strong>Manager Comment:</strong> <?php echo esc_html($report['manager_comment']); ?>
+                        </p>
+                    <?php endif; ?>
                 </div>
-            <?php else: ?>
+            <?php elseif (!$existing_report): ?>
                 <form method="post" action="">
                     <?php wp_nonce_field('bassmah_report_submit', 'bassmah_report_nonce'); ?>
                     

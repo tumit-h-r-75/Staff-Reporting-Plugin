@@ -17,7 +17,7 @@
         <?php else: ?>
             <table class="wp-list-table widefat fixed striped">
                 <thead>
-                    <tr>
+                    <tr class="dh-tabil">
                         <th>Name</th>
                         <th>Email</th>
                         <th>Role</th>
@@ -31,7 +31,7 @@
                         $table_name = $wpdb->prefix . 'staff_reports';
                         $report_count = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM $table_name WHERE user_id = %d", $user->ID));
                         ?>
-                        <tr>
+                        <tr class="dh-tabil"> 
                             <td><strong><?php echo esc_html($user->display_name); ?></strong></td>
                             <td><?php echo esc_html($user->user_email); ?></td>
                             <td>
