@@ -6,6 +6,19 @@ class Basmah_Staff_Reports_Tables {
         
         require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
         
+        $staff_reports_table = $wpdb->prefix . 'staff_reports';
+        $sql0 = "CREATE TABLE $staff_reports_table (
+            id bigint(20) NOT NULL AUTO_INCREMENT,
+            user_id bigint(20) NOT NULL,
+            report_date date NOT NULL,
+            tasks_json longtext,
+            created_at datetime DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY  (id),
+            KEY user_id (user_id),
+            KEY report_date (report_date)
+        ) $charset_collate;";
+        dbDelta($sql0);
+        
         $reports_table = $wpdb->prefix . 'bsr_reports';
         $sql1 = "CREATE TABLE $reports_table (
             id bigint(20) NOT NULL AUTO_INCREMENT,
