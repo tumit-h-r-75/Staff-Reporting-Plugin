@@ -41,7 +41,7 @@ class Basmah_Staff_Reports_Salary {
         global $wpdb;
         $table_name = $wpdb->prefix . 'staff_salary_settings';
         
-        $data['working_days_per_month'] = max(1, intval($data['working_days_per_month']));
+        $data['working_days_per_month'] = max(1, min(31, intval($data['working_days_per_month'])));
         $data['monthly_salary'] = max(0, floatval($data['monthly_salary']));
         $data['daily_rate'] = round($data['monthly_salary'] / $data['working_days_per_month'], 2);
         $data['updated_at'] = current_time('mysql');

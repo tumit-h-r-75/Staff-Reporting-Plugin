@@ -31,12 +31,17 @@ class Basmah_Staff_Reports_API_Reports {
             return false;
         }
 
-        if ($request->get_method() === 'GET') {
-            return current_user_can('basmah_view_my_reports') || current_user_can('basmah_view_all_reports') || current_user_can('manage_options');
+        // Check nonce for POST requests
+        if ($request->get_method() === 'POST') {
+            $nonce = $request->get_header('X-WP-Nonce');
+            if (!$nonce || !wp_verify_nonce($nonce, 'wp_rest')) {
+                return false;
+            }
+            return current_user_can('basmah_submit_report') || current_user_can('basmah_edit_reports') || current_user_can('manage_options');
         }
 
-        if ($request->get_method() === 'POST') {
-            return current_user_can('basmah_submit_report') || current_user_can('basmah_edit_reports') || current_user_can('manage_options');
+        if ($request->get_method() === 'GET') {
+            return current_user_can('basmah_view_my_reports') || current_user_can('basmah_view_all_reports') || current_user_can('manage_options');
         }
 
         return false;
@@ -105,7 +110,13 @@ class Basmah_Staff_Reports_API_Reports {
             'tasks' => $tasks,
         ));
 
-        return new WP_REST_Response(array('success' => (bool) $result), $result ? 201 : 500);
+        if ($result) {
+            // Send email notification to managers
+            Basmah_Staff_Reports_Emails::notify_manager_on_report_submission($user_id, $report_date);
+            return new WP_REST_Response(array('success' => true, 'message' => 'Report submitted successfully'), 201);
+        }
+
+        return new WP_REST_Response(array('success' => false, 'message' => 'Failed to submit report'), 500);
     }
 
     public function get_my_reports($request) {

@@ -9,9 +9,11 @@ class Basmah_Staff_Reports_Reports {
             'report_date' => sanitize_text_field($data['report_date']),
             'tasks_json' => wp_json_encode($data['tasks']),
             'status' => 'pending',
+            'manager_comment' => isset($data['manager_comment']) ? sanitize_textarea_field($data['manager_comment']) : null,
+            'ip_address' => isset($_SERVER['REMOTE_ADDR']) ? sanitize_text_field($_SERVER['REMOTE_ADDR']) : '',
             'submission_time' => current_time('mysql'),
             'created_at' => current_time('mysql'),
-        ), array('%d', '%s', '%s', '%s', '%s', '%s'));
+        ), array('%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s'));
     }
     
     public static function get_reports($args = array()) {
