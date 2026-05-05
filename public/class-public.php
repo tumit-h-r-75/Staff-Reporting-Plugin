@@ -16,6 +16,13 @@ class Basmah_Staff_Reports_Public {
         wp_enqueue_style('bsr-public-css', BASMAH_STAFF_REPORTS_PLUGIN_URL . 'public/assets/style.css');
         wp_enqueue_script('bsr-public-js', BASMAH_STAFF_REPORTS_PLUGIN_URL . 'public/assets/script.js', array('jquery'), null, true);
         
+        // Localize script with nonce and other data
+        wp_localize_script('bsr-public-js', 'bsrData', array(
+            'nonce' => wp_create_nonce('wp_rest'),
+            'apiUrl' => rest_url('bassmah/v1/'),
+            'ajaxUrl' => admin_url('admin-ajax.php')
+        ));
+        
         // Enqueue React-style components
         wp_enqueue_style('bsr-react-components-css', BASMAH_STAFF_REPORTS_PLUGIN_URL . 'public/assets/react-components/index.css', array(), '1.0.0');
         wp_enqueue_script('bsr-react-components-js', BASMAH_STAFF_REPORTS_PLUGIN_URL . 'public/assets/react-components/index.js', array('jquery'), '1.0.0', true);
