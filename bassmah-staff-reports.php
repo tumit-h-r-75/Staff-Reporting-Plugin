@@ -17,6 +17,7 @@ if (!defined('ABSPATH')) {
 }
 
 define('BASMAH_STAFF_REPORTS_VERSION', '1.0.6');
+define('BASMAH_STAFF_REPORTS_CAPS_VERSION', '1.0.6-roles-2');
 define('BASMAH_STAFF_REPORTS_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('BASMAH_STAFF_REPORTS_PLUGIN_URL', plugin_dir_url(__FILE__));
 
@@ -44,7 +45,7 @@ register_deactivation_hook(__FILE__, array('Basmah_Staff_Reports_Deactivator', '
 
 function bassmah_staff_reports_init() {
     load_plugin_textdomain('bassmah-staff-reports', false, dirname(plugin_basename(__FILE__)) . '/languages/');
-    if (get_option('bsr_capabilities_synced_version') !== BASMAH_STAFF_REPORTS_VERSION) {
+    if (get_option('bsr_capabilities_synced_version') !== BASMAH_STAFF_REPORTS_CAPS_VERSION) {
         Basmah_Staff_Reports_Roles::sync_capabilities();
     }
     

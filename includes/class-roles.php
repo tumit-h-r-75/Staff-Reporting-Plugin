@@ -16,7 +16,7 @@ class Basmah_Staff_Reports_Roles {
         self::sync_role_capabilities('basmah_staff', self::get_staff_capabilities());
         self::sync_role_capabilities('basmah_manager', self::get_manager_capabilities());
         self::sync_power_user_capabilities();
-        update_option('bsr_capabilities_synced_version', BASMAH_STAFF_REPORTS_VERSION);
+        update_option('bsr_capabilities_synced_version', BASMAH_STAFF_REPORTS_CAPS_VERSION);
     }
 
     public static function get_staff_capabilities() {
