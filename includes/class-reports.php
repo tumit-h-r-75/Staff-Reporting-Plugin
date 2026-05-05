@@ -32,6 +32,8 @@ class Basmah_Staff_Reports_Reports {
             'submission_time' => current_time('mysql'),
             'created_at' => current_time('mysql'),
         ), array('%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s'));
+        
+        return $result;
     }
     
     public static function get_reports($args = array()) {
