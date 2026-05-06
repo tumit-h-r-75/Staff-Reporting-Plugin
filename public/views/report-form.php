@@ -1,37 +1,421 @@
-<div class="bsr-report-form" id="bsr-report-form">
-    <h2>Submit Daily Report</h2>
+<div class="bsr-card max-w-2xl mx-auto p-6" id="bsr-report-form">
+    <div class="bsr-card-header">
+        <h2 class="bsr-card-title text-2xl">Submit Daily Report</h2>
+        <p class="text-muted-foreground">Fill in your daily work report below</p>
+    </div>
     
-    <div id="bsr-message" style="display: none;"></div>
-    
-    <form id="bsr-report-form-submit" method="post">
-        <div class="form-row">
-            <label>Date:</label>
-            <input type="date" id="report_date" name="report_date" required value="<?php echo current_time('Y-m-d'); ?>">
-        </div>
+    <div class="mt-6">
+        <div id="bsr-message" class="p-4 rounded-lg mb-4" style="display: none;"></div>
         
-        <div class="form-row">
-            <label>Task Description:</label>
-            <textarea id="task_description" name="task_description" rows="4" required placeholder="What did you work on today?"></textarea>
-        </div>
-        
-        <div class="form-row">
-            <label>Status:</label>
-            <select id="task_status" name="task_status" required>
-                <option value="">Select Status</option>
-                <option value="completed">Completed</option>
-                <option value="in-progress">In Progress</option>
-                <option value="not-completed">Not Completed</option>
-            </select>
-        </div>
-        
-        <div class="form-row">
-            <label>Next Action:</label>
-            <textarea id="next_action" name="next_action" rows="2" required placeholder="What will you do next?"></textarea>
-        </div>
-        
-        <button type="submit" class="submit-btn">Submit Report</button>
-    </form>
+        <form id="bsr-report-form-submit" class="space-y-6">
+            <div class="bsr-form-row">
+                <label for="report_date" class="bsr-label">Report Date</label>
+                <input 
+                    type="date" 
+                    id="report_date" 
+                    name="report_date" 
+                    required 
+                    value="<?php echo current_time('Y-m-d'); ?>"
+                    class="bsr-input"
+                    max="<?php echo current_time('Y-m-d'); ?>"
+                >
+            </div>
+            
+            <div class="bsr-form-row">
+                <label for="task_description" class="bsr-label">Task Description</label>
+                <textarea 
+                    id="task_description" 
+                    name="task_description" 
+                    rows="4" 
+                    required 
+                    placeholder="Describe what you worked on today..."
+                    class="bsr-textarea"
+                ></textarea>
+            </div>
+            
+            <div class="bsr-form-row">
+                <label for="task_status" class="bsr-label">Task Status</label>
+                <select id="task_status" name="task_status" required class="bsr-select">
+                    <option value="">Select Status</option>
+                    <option value="completed">✅ Completed</option>
+                    <option value="in-progress">🔄 In Progress</option>
+                    <option value="not-completed">❌ Not Completed</option>
+                </select>
+            </div>
+            
+            <div class="bsr-form-row">
+                <label for="next_action" class="bsr-label">Next Action</label>
+                <textarea 
+                    id="next_action" 
+                    name="next_action" 
+                    rows="2" 
+                    required 
+                    placeholder="What will you do next?"
+                    class="bsr-textarea"
+                ></textarea>
+            </div>
+            
+            <div class="flex gap-4 pt-4">
+                <button type="submit" class="bsr-button bsr-button-primary bsr-button-lg">
+                    Submit Report
+                </button>
+                <button type="button" onclick="window.location.reload()" class="bsr-button bsr-button-secondary bsr-button-default">
+                    Reset Form
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
+
+<!-- Success Modal -->
+<div id="bsr-success-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50" style="display: none;">
+    <div class="bg-card text-card-foreground p-6 rounded-xl shadow-lg max-w-md w-full mx-4">
+        <div class="flex items-center gap-3 mb-4">
+            <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+            </div>
+            <div>
+                <h3 class="font-semibold text-lg">Report Submitted Successfully!</h3>
+                <p class="text-muted-foreground">Your daily report has been submitted</p>
+            </div>
+        </div>
+        
+        <div class="bg-muted p-4 rounded-lg mb-4">
+            <p class="text-sm">
+                <strong>Date:</strong> <span id="submitted-date"></span>
+            </p>
+            <p class="text-sm mt-1 text-muted-foreground">
+                You cannot submit another report for this date today.
+            </p>
+        </div>
+        
+        <div class="flex gap-3">
+            <button onclick="closeModal()" class="bsr-button bsr-button-primary bsr-button-default">
+                Close
+            </button>
+            <button onclick="window.location.href='/dashboard'" class="bsr-button bsr-button-secondary bsr-button-default">
+                Go to Dashboard
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+.bsr-card {
+    border-radius: calc(var(--radius) + 6px);
+    border: 1px solid hsl(var(--border));
+    background-color: hsl(var(--card));
+    color: hsl(var(--card-foreground));
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+}
+
+.bsr-card-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    padding: 1.5rem;
+    padding-bottom: 0;
+}
+
+.bsr-card-title {
+    font-size: 1.5rem;
+    line-height: 2rem;
+    font-weight: 600;
+    letter-spacing: -0.025em;
+}
+
+.bsr-form-row {
+    margin-bottom: 1rem;
+}
+
+.bsr-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    line-height: 1.25rem;
+    margin-bottom: 0.25rem;
+    display: block;
+}
+
+.bsr-input {
+    display: flex;
+    height: 2.25rem;
+    width: 100%;
+    border-radius: calc(var(--radius) + 2px);
+    border: 1px solid hsl(var(--input));
+    background-color: hsl(var(--background));
+    font-size: 1rem;
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+    transition-duration: 150ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 0.25rem 0.75rem;
+}
+
+.bsr-input:focus {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 2px hsl(var(--ring));
+}
+
+.bsr-textarea {
+    display: flex;
+    min-height: 60px;
+    width: 100%;
+    border-radius: calc(var(--radius) + 2px);
+    border: 1px solid hsl(var(--input));
+    background-color: hsl(var(--background));
+    font-size: 1rem;
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+    transition-duration: 150ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 0.5rem 0.75rem;
+    resize: vertical;
+}
+
+.bsr-textarea:focus {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 2px hsl(var(--ring));
+}
+
+.bsr-select {
+    display: flex;
+    height: 2.25rem;
+    width: 100%;
+    border-radius: calc(var(--radius) + 2px);
+    border: 1px solid hsl(var(--input));
+    background-color: hsl(var(--background));
+    font-size: 0.875rem;
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+    transition-duration: 150ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 0.25rem 0.75rem;
+}
+
+.bsr-select:focus {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 2px hsl(var(--ring));
+}
+
+.bsr-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    white-space: nowrap;
+    border-radius: calc(var(--radius) + 2px);
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+    transition-duration: 150ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+    border: none;
+    cursor: pointer;
+}
+
+.bsr-button-primary {
+    background-color: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+}
+
+.bsr-button-primary:hover {
+    background-color: hsl(var(--primary) / 0.9);
+}
+
+.bsr-button-secondary {
+    background-color: hsl(var(--secondary));
+    color: hsl(var(--secondary-foreground));
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+}
+
+.bsr-button-secondary:hover {
+    background-color: hsl(var(--secondary) / 0.8);
+}
+
+.bsr-button-default {
+    height: 2.25rem;
+    padding: 0.5rem 1rem;
+}
+
+.bsr-button-lg {
+    height: 2.5rem;
+    padding: 0.5rem 2rem;
+}
+
+/* Message styling */
+#bsr-message.success {
+    background-color: hsl(var(--primary) / 0.1);
+    color: hsl(var(--primary));
+    border: 1px solid hsl(var(--primary) / 0.2);
+}
+
+#bsr-message.error {
+    background-color: hsl(var(--destructive) / 0.1);
+    color: hsl(var(--destructive));
+    border: 1px solid hsl(var(--destructive) / 0.2);
+}
+
+/* Modal backdrop */
+.fixed.inset-0 {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.bg-black-50 {
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.z-50 {
+    z-index: 50;
+}
+
+/* Responsive */
+@media (min-width: 768px) {
+    .max-w-2xl {
+        max-width: 42rem;
+    }
+    
+    .max-w-md {
+        max-width: 28rem;
+    }
+}
+
+.mx-auto {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.mx-4 {
+    margin-left: 1rem;
+    margin-right: 1rem;
+}
+
+.space-y-6 > * + * {
+    margin-top: 1.5rem;
+}
+
+.mt-6 {
+    margin-top: 1.5rem;
+}
+
+.mb-4 {
+    margin-bottom: 1rem;
+}
+
+.pt-4 {
+    padding-top: 1rem;
+}
+
+.p-4 {
+    padding: 1rem;
+}
+
+.p-6 {
+    padding: 1.5rem;
+}
+
+.text-muted-foreground {
+    color: hsl(var(--muted-foreground));
+}
+
+.text-2xl {
+    font-size: 1.5rem;
+    line-height: 2rem;
+}
+
+.text-lg {
+    font-size: 1.125rem;
+    line-height: 1.75rem;
+}
+
+.text-sm {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+}
+
+.font-semibold {
+    font-weight: 600;
+}
+
+.w-12 {
+    width: 3rem;
+}
+
+.h-12 {
+    height: 3rem;
+}
+
+.w-6 {
+    width: 1.5rem;
+}
+
+.h-6 {
+    height: 1.5rem;
+}
+
+.bg-green-100 {
+    background-color: #dcfce7;
+}
+
+.text-green-600 {
+    color: #16a34a;
+}
+
+.bg-muted {
+    background-color: hsl(var(--muted));
+}
+
+.mt-1 {
+    margin-top: 0.25rem;
+}
+
+.gap-3 {
+    gap: 0.75rem;
+}
+
+.gap-4 {
+    gap: 1rem;
+}
+
+.flex {
+    display: flex;
+}
+
+.items-center {
+    align-items: center;
+}
+
+.justify-center {
+    justify-content: center;
+}
+
+.rounded-xl {
+    border-radius: calc(var(--radius) + 6px);
+}
+
+.rounded-lg {
+    border-radius: calc(var(--radius) + 4px);
+}
+
+.rounded-full {
+    border-radius: 9999px;
+}
+
+.shadow-lg {
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+</style>
 
 <!-- Success Modal -->
 <div id="bsr-success-modal" style="display: none;">

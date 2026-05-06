@@ -14,6 +14,7 @@ class Basmah_Staff_Reports_Public {
     
     public function enqueue_public_assets() {
         wp_enqueue_style('bsr-public-css', BASMAH_STAFF_REPORTS_PLUGIN_URL . 'public/assets/style.css');
+        wp_enqueue_style('bsr-tailwind-utilities', BASMAH_STAFF_REPORTS_PLUGIN_URL . 'public/css/tailwind-utilities.css', array(), '1.0.0');
         wp_enqueue_script('bsr-public-js', BASMAH_STAFF_REPORTS_PLUGIN_URL . 'public/assets/script.js', array('jquery'), null, true);
         
         // Localize script with nonce and other data
@@ -59,17 +60,332 @@ class Basmah_Staff_Reports_Public {
         $user = wp_get_current_user();
         $user_id = $user->ID;
         
-        // Return React-style dashboard component
-        return sprintf(
-            '<div data-bsr-dashboard data-user-id="%d" data-user-name="%s" data-user-role="%s" data-nonce="%s" data-report-form-url="%s" data-my-reports-url="%s" data-salary-url="%s"></div>',
-            esc_attr($user_id),
-            esc_attr($user->display_name),
-            esc_attr($this->get_user_role()),
-            esc_attr(wp_create_nonce('wp_rest')),
-            esc_attr(home_url('/report-form')),
-            esc_attr(home_url('/my-reports')),
-            esc_attr(home_url('/salary'))
-        );
+        // Include modern dashboard
+        ob_start();
+        ?>
+        <div class="bsr-card max-w-4xl mx-auto p-6">
+            <div class="bsr-card-header">
+                <h2 class="bsr-card-title text-2xl">Staff Dashboard</h2>
+                <p class="text-muted-foreground">Welcome back, <strong><?php echo esc_html($user->display_name); ?></strong>!</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+                <!-- Quick Actions Card -->
+                <div class="bsr-card">
+                    <div class="bsr-card-header">
+                        <h3 class="bsr-card-title text-lg">🚀 Quick Actions</h3>
+                    </div>
+                    <div class="p-6 space-y-3">
+                        <a href="/report-form" class="bsr-button bsr-button-primary w-full">
+                            📝 Submit Report
+                        </a>
+                        <a href="/my-reports" class="bsr-button bsr-button-secondary w-full">
+                            📋 My Reports
+                        </a>
+                        <a href="/salary" class="bsr-button bsr-button-secondary w-full">
+                            💰 Salary Info
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Today's Status Card -->
+                <div class="bsr-card">
+                    <div class="bsr-card-header">
+                        <h3 class="bsr-card-title text-lg">📊 Today's Status</h3>
+                    </div>
+                    <div class="p-6">
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <span class="text-muted-foreground">Date:</span>
+                                <span class="font-semibold"><?php echo current_time('Y-m-d'); ?></span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-muted-foreground">Status:</span>
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    ✅ Ready
+                                </span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-muted-foreground">Report Submitted:</span>
+                                <span class="font-semibold" id="today-report-status">Not yet</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Stats Overview Card -->
+                <div class="bsr-card">
+                    <div class="bsr-card-header">
+                        <h3 class="bsr-card-title text-lg">📈 This Month</h3>
+                    </div>
+                    <div class="p-6">
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <span class="text-muted-foreground">Reports:</span>
+                                <span class="font-semibold" id="monthly-reports">0</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-muted-foreground">Working Days:</span>
+                                <span class="font-semibold">22</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-muted-foreground">Completion:</span>
+                                <span class="font-semibold text-green-600" id="completion-rate">0%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recent Activity -->
+            <div class="mt-8">
+                <div class="bsr-card">
+                    <div class="bsr-card-header">
+                        <h3 class="bsr-card-title text-lg">📋 Recent Activity</h3>
+                    </div>
+                    <div class="p-6">
+                        <div id="recent-activity" class="space-y-3">
+                            <p class="text-muted-foreground text-sm">Loading recent activity...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <style>
+        .bsr-card {
+            border-radius: calc(var(--radius) + 6px);
+            border: 1px solid hsl(var(--border));
+            background-color: hsl(var(--card));
+            color: hsl(var(--card-foreground));
+            box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        }
+        
+        .bsr-card-header {
+            display: flex;
+            flex-direction: column;
+            gap: 0.375rem;
+            padding: 1.5rem;
+            padding-bottom: 0;
+        }
+        
+        .bsr-card-title {
+            font-size: 1.125rem;
+            line-height: 1.75rem;
+            font-weight: 600;
+            letter-spacing: -0.025em;
+        }
+        
+        .bsr-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            white-space: nowrap;
+            border-radius: calc(var(--radius) + 2px);
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+            transition-duration: 150ms;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            outline: 2px solid transparent;
+            outline-offset: 2px;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        
+        .bsr-button-primary {
+            background-color: hsl(var(--primary));
+            color: hsl(var(--primary-foreground));
+            box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        }
+        
+        .bsr-button-primary:hover {
+            background-color: hsl(var(--primary) / 0.9);
+        }
+        
+        .bsr-button-secondary {
+            background-color: hsl(var(--secondary));
+            color: hsl(var(--secondary-foreground));
+            box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        }
+        
+        .bsr-button-secondary:hover {
+            background-color: hsl(var(--secondary) / 0.8);
+        }
+        
+        .w-full {
+            width: 100%;
+        }
+        
+        .space-y-3 > * + * {
+            margin-top: 0.75rem;
+        }
+        
+        .space-y-4 > * + * {
+            margin-top: 1rem;
+        }
+        
+        .grid {
+            display: grid;
+        }
+        
+        .grid-cols-1 {
+            grid-template-columns: repeat(1, minmax(0, 1fr));
+        }
+        
+        .gap-6 {
+            gap: 1.5rem;
+        }
+        
+        .mt-6 {
+            margin-top: 1.5rem;
+        }
+        
+        .mt-8 {
+            margin-top: 2rem;
+        }
+        
+        .p-6 {
+            padding: 1.5rem;
+        }
+        
+        .text-2xl {
+            font-size: 1.5rem;
+            line-height: 2rem;
+        }
+        
+        .text-lg {
+            font-size: 1.125rem;
+            line-height: 1.75rem;
+        }
+        
+        .text-sm {
+            font-size: 0.875rem;
+            line-height: 1.25rem;
+        }
+        
+        .text-muted-foreground {
+            color: hsl(var(--muted-foreground));
+        }
+        
+        .font-semibold {
+            font-weight: 600;
+        }
+        
+        .text-green-600 {
+            color: #16a34a;
+        }
+        
+        .bg-green-100 {
+            background-color: #dcfce7;
+        }
+        
+        .text-green-800 {
+            color: #166534;
+        }
+        
+        .text-xs {
+            font-size: 0.75rem;
+            line-height: 1rem;
+        }
+        
+        .inline-flex {
+            display: inline-flex;
+        }
+        
+        .items-center {
+            align-items: center;
+        }
+        
+        .justify-between {
+            justify-content: space-between;
+        }
+        
+        .px-2 {
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
+        }
+        
+        .py-1 {
+            padding-top: 0.25rem;
+            padding-bottom: 0.25rem;
+        }
+        
+        .rounded-full {
+            border-radius: 9999px;
+        }
+        
+        .max-w-4xl {
+            max-width: 56rem;
+        }
+        
+        .mx-auto {
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        @media (min-width: 768px) {
+            .md\:grid-cols-3 {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+        }
+        </style>
+        
+        <script>
+        jQuery(document).ready(function($) {
+            // Load today's report status
+            $.ajax({
+                url: '/wp-json/bassmah/v1/reports/mine',
+                method: 'GET',
+                beforeSend: function(xhr) {
+                    xhr.setRequestHeader('X-WP-Nonce', bsrData ? bsrData.nonce : '');
+                },
+                success: function(reports) {
+                    const today = new Date().toISOString().split('T')[0];
+                    const todayReport = reports.find(r => r.report_date === today);
+                    
+                    if (todayReport) {
+                        $('#today-report-status').text('Submitted ✅').addClass('text-green-600');
+                    }
+                    
+                    // Update monthly stats
+                    const currentMonth = new Date().getMonth();
+                    const currentYear = new Date().getFullYear();
+                    const monthReports = reports.filter(r => {
+                        const reportDate = new Date(r.report_date);
+                        return reportDate.getMonth() === currentMonth && reportDate.getFullYear() === currentYear;
+                    });
+                    
+                    $('#monthly-reports').text(monthReports.length);
+                    const completionRate = Math.round((monthReports.length / 22) * 100);
+                    $('#completion-rate').text(completionRate + '%');
+                    
+                    // Load recent activity
+                    if (monthReports.length > 0) {
+                        const recentHtml = monthReports.slice(0, 5).map(report => `
+                            <div class="flex items-center justify-between p-3 bg-muted rounded-lg">
+                                <div>
+                                    <div class="font-medium">${report.report_date}</div>
+                                    <div class="text-sm text-muted-foreground">${report.status}</div>
+                                </div>
+                                <div class="text-sm">
+                                    ${report.status === 'approved' ? '✅' : report.status === 'pending' ? '⏳' : '❌'}
+                                </div>
+                            </div>
+                        `).join('');
+                        
+                        $('#recent-activity').html(recentHtml);
+                    } else {
+                        $('#recent-activity').html('<p class="text-muted-foreground text-sm">No reports this month yet.</p>');
+                    }
+                }
+            });
+        });
+        </script>
+        <?php
+        return ob_get_clean();
     }
     
     public function render_report_form() {
@@ -154,15 +470,10 @@ class Basmah_Staff_Reports_Public {
             return '<p style="padding: 20px; background: #fff; border-radius: 8px; text-align: center;">You do not have permission to submit reports.</p>';
         }
 
-        // Return React-style report form component
-        return sprintf(
-            '<div data-bsr-report-form data-user-id="%d" data-user-name="%s" data-user-role="%s" data-nonce="%s" data-api-url="%s"></div>',
-            esc_attr($user_id),
-            esc_attr($current_user->display_name),
-            esc_attr($this->get_user_role()),
-            esc_attr(wp_create_nonce('wp_rest')),
-            esc_attr(rest_url('bsr/v1/'))
-        );
+        // Include the actual form file
+        ob_start();
+        include BASMAH_STAFF_REPORTS_PLUGIN_DIR . 'public/views/report-form.php';
+        return ob_get_clean();
     }
 
     // Helper method to get user role
