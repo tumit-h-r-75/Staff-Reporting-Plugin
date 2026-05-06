@@ -23,6 +23,18 @@ class Basmah_Staff_Reports_API_Reports {
                 'callback' => array($this, 'get_my_reports'),
                 'permission_callback' => array($this, 'check_permission'),
             ));
+
+            register_rest_route($namespace, '/reports/(?P<id>\d+)/comment', array(
+                'methods' => 'PUT',
+                'callback' => array($this, 'add_comment'),
+                'permission_callback' => array($this, 'check_permission'),
+            ));
+
+            register_rest_route($namespace, '/reports/export', array(
+                'methods' => 'GET',
+                'callback' => array($this, 'export_reports'),
+                'permission_callback' => array($this, 'check_permission'),
+            ));
         }
     }
     
@@ -125,6 +137,74 @@ class Basmah_Staff_Reports_API_Reports {
         ));
 
         return new WP_REST_Response($reports, 200);
+    }
+    
+    public function add_comment($request) {
+        $report_id = intval($request['id']);
+        $comment = sanitize_textarea_field($request['comment']);
+        $status = sanitize_text_field($request['status']);
+        
+        if (empty($comment) || !in_array($status, ['approved', 'rejected'])) {
+            return new WP_Error('invalid_comment', 'Invalid comment or status.', array('status' => 400));
+        }
+        
+        $result = Basmah_Staff_Reports_Reports::update_report($report_id, array(
+            'manager_comment' => $comment,
+            'status' => $status
+        ));
+        
+        if ($result !== false) {
+            // Send notification to staff member
+            $report = Basmah_Staff_Reports_Reports::get_report($report_id);
+            Basmah_Staff_Reports_Emails::notify_staff_status_update($report, $status);
+            
+            return new WP_REST_Response(array(
+                'success' => true,
+                'message' => 'Comment added successfully.'
+            ), 200);
+        } else {
+            return new WP_Error('update_failed', 'Failed to update report.', array('status' => 500));
+        }
+    }
+    
+    public function export_reports($request) {
+        $args = array();
+        
+        // Parse query parameters
+        $user_id = $request->get_param('user_id');
+        $date_from = $request->get_param('date_from');
+        $date_to = $request->get_param('date_to');
+        $status = $request->get_param('status');
+        $format = $request->get_param('format', 'csv'); // Default to CSV
+        
+        if ($user_id) {
+            $args['user_id'] = intval($user_id);
+        }
+        
+        if ($date_from) {
+            $args['date_from'] = sanitize_text_field($date_from);
+        }
+        
+        if ($date_to) {
+            $args['date_to'] = sanitize_text_field($date_to);
+        }
+        
+        if ($status) {
+            $args['status'] = sanitize_text_field($status);
+        }
+        
+        $reports = Basmah_Staff_Reports_Reports::get_reports($args);
+        
+        if (empty($reports)) {
+            return new WP_Error('no_reports', 'No reports found to export.', array('status' => 404));
+        }
+        
+        // Export based on format
+        if ($format === 'excel') {
+            Basmah_Staff_Reports_Reports::export_to_excel($reports);
+        } else {
+            Basmah_Staff_Reports_Reports::export_to_csv($reports);
+        }
     }
 
     private function sanitize_tasks($tasks) {

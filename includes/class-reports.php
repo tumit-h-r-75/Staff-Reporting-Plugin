@@ -4,6 +4,13 @@ class Basmah_Staff_Reports_Reports {
         global $wpdb;
         $table_name = $wpdb->prefix . 'staff_reports';
         
+        // Check if table exists
+        $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table_name'");
+        if (!$table_exists) {
+            error_log('BSR Error: Table ' . $table_name . ' does not exist!');
+            return new WP_Error('table_not_found', 'Database table not found. Please reactivate the plugin.');
+        }
+        
         // Check for duplicate submission
         $existing = self::report_exists($data['user_id'], $data['report_date']);
         if ($existing) {
@@ -22,6 +29,11 @@ class Basmah_Staff_Reports_Reports {
             }
         }
         
+        // Debug: Log table name and data
+        error_log('BSR Debug: Table name: ' . $table_name);
+        error_log('BSR Debug: Data to insert: ' . print_r($data, true));
+        error_log('BSR Debug: WDB last error before: ' . $wpdb->last_error);
+        
         $result = $wpdb->insert($table_name, array(
             'user_id' => intval($data['user_id']),
             'report_date' => sanitize_text_field($data['report_date']),
@@ -31,7 +43,12 @@ class Basmah_Staff_Reports_Reports {
             'ip_address' => isset($_SERVER['REMOTE_ADDR']) ? sanitize_text_field($_SERVER['REMOTE_ADDR']) : '',
             'submission_time' => current_time('mysql'),
             'created_at' => current_time('mysql'),
-        ), array('%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s'));
+        ), array('%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s'));
+        
+        // Debug: Log result and errors
+        error_log('BSR Debug: Insert result: ' . ($result ? 'Success' : 'Failed'));
+        error_log('BSR Debug: WDB last error after: ' . $wpdb->last_error);
+        error_log('BSR Debug: Insert ID: ' . $wpdb->insert_id);
         
         return $result;
     }
@@ -264,5 +281,113 @@ class Basmah_Staff_Reports_Reports {
             $user_id,
             $report_date
         ));
+    }
+    
+    public static function export_to_csv($reports) {
+        $filename = 'staff-reports-' . date('Y-m-d') . '.csv';
+        
+        header('Content-Type: text/csv');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        
+        $output = fopen('php://output', 'w');
+        
+        // CSV Header
+        fputcsv($output, [
+            'Report ID',
+            'Staff Name',
+            'Email',
+            'Report Date',
+            'Status',
+            'Task Category',
+            'Task Description',
+            'Completion Status',
+            'Next Action',
+            'Manager Assigned Task',
+            'Additional Notes',
+            'Manager Comment',
+            'Submission Time'
+        ]);
+        
+        foreach ($reports as $report) {
+            $tasks = json_decode($report['tasks_json'], true);
+            $task_descriptions = [];
+            $task_categories = [];
+            
+            if (is_array($tasks)) {
+                foreach ($tasks as $task) {
+                    $task_descriptions[] = $task['task_category'] . ': ' . $task['task_description'];
+                    $task_categories[] = $task['task_category'];
+                }
+            }
+            
+            fputcsv($output, [
+                $report['id'],
+                $report['display_name'],
+                $report['user_email'],
+                $report['report_date'],
+                $report['status'],
+                implode('; ', array_unique($task_categories)),
+                implode('; ', $task_descriptions),
+                isset($tasks[0]['completion_status']) ? $tasks[0]['completion_status'] : '',
+                isset($tasks[0]['next_action']) ? $tasks[0]['next_action'] : '',
+                isset($tasks[0]['manager_assigned_task']) ? $tasks[0]['manager_assigned_task'] : '',
+                isset($tasks[0]['additional_notes']) ? $tasks[0]['additional_notes'] : '',
+                $report['manager_comment'] ? $report['manager_comment'] : '',
+                $report['submission_time']
+            ]);
+        }
+        
+        fclose($output);
+        exit;
+    }
+    
+    public static function export_to_excel($reports) {
+        require_once BASMAH_STAFF_REPORTS_PLUGIN_DIR . 'vendor/autoload.php';
+        
+        $filename = 'staff-reports-' . date('Y-m-d') . '.xlsx';
+        
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        
+        // Headers
+        $spreadsheet->getSheet(0)->fromArray([
+            ['Report ID', 'Staff Name', 'Email', 'Report Date', 'Status', 'Task Category', 'Task Description', 'Completion Status', 'Next Action', 'Manager Assigned Task', 'Additional Notes', 'Manager Comment', 'Submission Time']
+        ]);
+        
+        // Data
+        foreach ($reports as $report) {
+            $tasks = json_decode($report['tasks_json'], true);
+            $task_descriptions = [];
+            $task_categories = [];
+            
+            if (is_array($tasks)) {
+                foreach ($tasks as $task) {
+                    $task_descriptions[] = $task['task_category'] . ': ' . $task['task_description'];
+                    $task_categories[] = $task['task_category'];
+                }
+            }
+            
+            $spreadsheet->getActiveSheet()->fromArray([
+                $report['id'],
+                $report['display_name'],
+                $report['user_email'],
+                $report['report_date'],
+                $report['status'],
+                implode('; ', array_unique($task_categories)),
+                implode('; ', $task_descriptions),
+                isset($tasks[0]['completion_status']) ? $tasks[0]['completion_status'] : '',
+                isset($tasks[0]['next_action']) ? $tasks[0]['next_action'] : '',
+                isset($tasks[0]['manager_assigned_task']) ? $tasks[0]['manager_assigned_task'] : '',
+                isset($tasks[0]['additional_notes']) ? $tasks[0]['additional_notes'] : '',
+                $report['manager_comment'] ? $report['manager_comment'] : '',
+                $report['submission_time']
+            ], 'A' . ($spreadsheet->getActiveSheet()->getHighestDataRow() + 1));
+        }
+        
+        $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
+        $writer->save('php://output');
+        exit;
     }
 }

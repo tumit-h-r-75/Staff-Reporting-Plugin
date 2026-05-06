@@ -21,39 +21,89 @@
                 >
             </div>
             
-            <div class="bsr-form-row">
-                <label for="task_description" class="bsr-label">Task Description</label>
-                <textarea 
-                    id="task_description" 
-                    name="task_description" 
-                    rows="4" 
-                    required 
-                    placeholder="Describe what you worked on today..."
-                    class="bsr-textarea"
-                ></textarea>
+            <div id="tasks-container">
+                <div class="task-item" data-task-index="0">
+                    <div class="bsr-form-row">
+                        <label class="bsr-label">Task Category</label>
+                        <select name="task_category[]" required class="bsr-select">
+                            <option value="">Select Category</option>
+                            <option value="Client Follow-up">Client Follow-up</option>
+                            <option value="Development">Development</option>
+                            <option value="Meeting">Meeting</option>
+                            <option value="Documentation">Documentation</option>
+                            <option value="Training">Training</option>
+                            <option value="Administration">Administration</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="bsr-form-row">
+                        <label class="bsr-label">Task Description</label>
+                        <textarea 
+                            name="task_description[]" 
+                            rows="3" 
+                            required 
+                            placeholder="Describe what you worked on..."
+                            class="bsr-textarea"
+                        ></textarea>
+                    </div>
+                    
+                    <div class="bsr-form-row">
+                        <label class="bsr-label">Completion Status</label>
+                        <div class="radio-group">
+                            <label class="radio-label">
+                                <input type="radio" name="completion_status[]" value="completed" required>
+                                &#10004; Completed
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="completion_status[]" value="in-progress" required>
+                                &#10226; In Progress
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="completion_status[]" value="not-completed" required>
+                                &#10060; Not Completed
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="bsr-form-row">
+                        <label class="bsr-label">Next Action</label>
+                        <textarea 
+                            name="next_action[]" 
+                            rows="2" 
+                            required 
+                            placeholder="What will you do next?"
+                            class="bsr-textarea"
+                        ></textarea>
+                    </div>
+                    
+                    <div class="bsr-form-row">
+                        <label class="bsr-label">Manager Assigned Task</label>
+                        <textarea 
+                            name="manager_assigned_task[]" 
+                            rows="2" 
+                            placeholder="Any task assigned by manager..."
+                            class="bsr-textarea"
+                        ></textarea>
+                    </div>
+                    
+                    <div class="bsr-form-row">
+                        <label class="bsr-label">Additional Notes</label>
+                        <textarea 
+                            name="additional_notes[]" 
+                            rows="2" 
+                            placeholder="Any additional notes..."
+                            class="bsr-textarea"
+                        ></textarea>
+                    </div>
+                    
+                    <hr class="task-divider">
+                </div>
             </div>
             
-            <div class="bsr-form-row">
-                <label for="task_status" class="bsr-label">Task Status</label>
-                <select id="task_status" name="task_status" required class="bsr-select">
-                    <option value="">Select Status</option>
-                    <option value="completed">✅ Completed</option>
-                    <option value="in-progress">🔄 In Progress</option>
-                    <option value="not-completed">❌ Not Completed</option>
-                </select>
-            </div>
-            
-            <div class="bsr-form-row">
-                <label for="next_action" class="bsr-label">Next Action</label>
-                <textarea 
-                    id="next_action" 
-                    name="next_action" 
-                    rows="2" 
-                    required 
-                    placeholder="What will you do next?"
-                    class="bsr-textarea"
-                ></textarea>
-            </div>
+            <button type="button" onclick="addTask()" class="bsr-button bsr-button-secondary">
+                + Add Another Task
+            </button>
             
             <div class="flex gap-4 pt-4">
                 <button type="submit" class="bsr-button bsr-button-primary bsr-button-lg">
@@ -261,6 +311,87 @@
     background-color: hsl(var(--destructive) / 0.1);
     color: hsl(var(--destructive));
     border: 1px solid hsl(var(--destructive) / 0.2);
+}
+
+/* Alert styling */
+.alert {
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    border-radius: calc(var(--radius) + 2px);
+    border: 1px solid;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+}
+
+.alert-success {
+    background-color: hsl(var(--primary) / 0.1);
+    color: hsl(var(--primary));
+    border-color: hsl(var(--primary) / 0.2);
+}
+
+.alert-danger {
+    background-color: hsl(var(--destructive) / 0.1);
+    color: hsl(var(--destructive));
+    border-color: hsl(var(--destructive) / 0.2);
+}
+
+.alert-warning {
+    background-color: #fef3c7;
+    color: #92400e;
+    border-color: #f59e0b;
+}
+
+/* Task management styles */
+.task-item {
+    border: 1px solid hsl(var(--border));
+    border-radius: calc(var(--radius) + 4px);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    background-color: hsl(var(--card));
+}
+
+.task-divider {
+    border: none;
+    border-top: 1px solid hsl(var(--border));
+    margin: 1.5rem 0 0 0;
+}
+
+.radio-group {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.radio-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: calc(var(--radius) + 2px);
+    border: 1px solid hsl(var(--border));
+    background-color: hsl(var(--background));
+    transition: all 150ms ease;
+}
+
+.radio-label:hover {
+    background-color: hsl(var(--muted));
+}
+
+.radio-label input[type="radio"] {
+    margin: 0;
+}
+
+.bsr-button-destructive {
+    background-color: hsl(var(--destructive));
+    color: hsl(var(--destructive-foreground));
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+}
+
+.bsr-button-destructive:hover {
+    background-color: hsl(var(--destructive) / 0.9);
 }
 
 /* Modal backdrop */

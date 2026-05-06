@@ -8,6 +8,7 @@ class Basmah_Staff_Reports_Public {
         add_shortcode('bsr_my_reports', array($this, 'render_my_reports'));
         add_shortcode('bassmah_my_reports', array($this, 'render_bassmah_my_reports'));
         add_shortcode('bsr_salary_view', array($this, 'render_salary_view'));
+        add_shortcode('bassmah_salary_view', array($this, 'render_bassmah_salary_view'));
         add_action('wp_enqueue_scripts', array($this, 'enqueue_public_assets'));
         add_action('init', array($this, 'handle_report_submission'));
     }
@@ -40,9 +41,7 @@ class Basmah_Staff_Reports_Public {
     }
     
     public function render_staff_dashboard() {
-        ob_start();
-        require_once BASMAH_STAFF_REPORTS_PLUGIN_DIR . 'public/views/dashboard.php';
-        return ob_get_clean();
+        return $this->render_bassmah_staff_dashboard();
     }
 
     public function render_bassmah_staff_dashboard() {
@@ -393,9 +392,7 @@ class Basmah_Staff_Reports_Public {
     }
     
     public function render_my_reports() {
-        ob_start();
-        require_once BASMAH_STAFF_REPORTS_PLUGIN_DIR . 'public/views/my-reports.php';
-        return ob_get_clean();
+        return $this->render_bassmah_my_reports();
     }
 
     public function render_bassmah_my_reports() {
@@ -449,8 +446,226 @@ class Basmah_Staff_Reports_Public {
     }
     
     public function render_salary_view() {
+        return $this->render_bassmah_salary_view();
+    }
+    
+    public function render_bassmah_salary_view() {
+        if (!is_user_logged_in()) {
+            return '<p style="padding: 20px; background: #fff; border-radius: 8px; text-align: center;">Please log in to view salary information.</p>';
+        }
+
+        $current_user = wp_get_current_user();
+        $user_id = get_current_user_id();
+        
+        // Allow admin or user to view their own salary
+        $is_admin = current_user_can('manage_options');
+        $can_view = current_user_can('basmah_view_my_salary') || $is_admin;
+        
+        if (!$can_view) {
+            return '<p style="padding: 20px; background: #fff; border-radius: 8px; text-align: center;">You do not have permission to view salary information.</p>';
+        }
+
+        // Get current month/year
+        $current_month = date('n');
+        $current_year = date('Y');
+        
+        // Get salary calculation
+        $salary_data = Basmah_Staff_Reports_Salary::calculate_salary($user_id, $current_month, $current_year);
+        
         ob_start();
-        require_once BASMAH_STAFF_REPORTS_PLUGIN_DIR . 'public/views/salary-view.php';
+        ?>
+        <div class="bsr-card max-w-4xl mx-auto p-6">
+            <div class="bsr-card-header">
+                <h2 class="bsr-card-title text-2xl">💰 Salary Information</h2>
+                <p class="text-muted-foreground">Your salary summary for <?php echo date('F Y'); ?></p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                <!-- Salary Settings Card -->
+                <div class="bsr-card">
+                    <div class="bsr-card-header">
+                        <h3 class="bsr-card-title text-lg">📊 Salary Settings</h3>
+                    </div>
+                    <div class="p-6">
+                        <div class="space-y-4">
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">Monthly Salary:</span>
+                                <span class="font-semibold"><?php echo number_format($salary_data['monthly_salary'], 2); ?> <?php echo esc_html($salary_data['currency']); ?></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">Daily Rate:</span>
+                                <span class="font-semibold"><?php echo number_format($salary_data['daily_rate'], 2); ?> <?php echo esc_html($salary_data['currency']); ?></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">Working Days:</span>
+                                <span class="font-semibold"><?php echo $salary_data['working_days']; ?></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- This Month Summary Card -->
+                <div class="bsr-card">
+                    <div class="bsr-card-header">
+                        <h3 class="bsr-card-title text-lg">📈 This Month Summary</h3>
+                    </div>
+                    <div class="p-6">
+                        <div class="space-y-4">
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">Reports Submitted:</span>
+                                <span class="font-semibold"><?php echo $salary_data['submitted_days']; ?> days</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">Missing Days:</span>
+                                <span class="font-semibold text-red-600"><?php echo $salary_data['missing_days']; ?> days</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">Total Deduction:</span>
+                                <span class="font-semibold text-red-600">-<?php echo number_format($salary_data['total_deduction'], 2); ?> <?php echo esc_html($salary_data['currency']); ?></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">Net Salary:</span>
+                                <span class="font-semibold text-green-600 text-lg"><?php echo number_format($salary_data['net_salary'], 2); ?> <?php echo esc_html($salary_data['currency']); ?></span>
+                            </div>
+                        </div>
+                        
+                        <?php if ($salary_data['missing_days'] > 0): ?>
+                            <div class="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                                <p class="text-red-800 text-sm">
+                                    <strong>⚠️ Salary Deduction Alert</strong><br>
+                                    You have <?php echo $salary_data['missing_days']; ?> missing days this month.
+                                    Submit your daily reports to avoid salary deduction.
+                                </p>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <style>
+        .bsr-card {
+            border-radius: calc(var(--radius) + 6px);
+            border: 1px solid hsl(var(--border));
+            background-color: hsl(var(--card));
+            color: hsl(var(--card-foreground));
+            box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        }
+        
+        .bsr-card-header {
+            display: flex;
+            flex-direction: column;
+            gap: 0.375rem;
+            padding: 1.5rem;
+            padding-bottom: 0;
+        }
+        
+        .bsr-card-title {
+            font-size: 1.125rem;
+            line-height: 1.75rem;
+            font-weight: 600;
+            letter-spacing: -0.025em;
+        }
+        
+        .space-y-4 > * + * {
+            margin-top: 1rem;
+        }
+        
+        .flex {
+            display: flex;
+        }
+        
+        .justify-between {
+            justify-content: space-between;
+        }
+        
+        .text-muted-foreground {
+            color: hsl(var(--muted-foreground));
+        }
+        
+        .font-semibold {
+            font-weight: 600;
+        }
+        
+        .text-red-600 {
+            color: #dc2626;
+        }
+        
+        .text-green-600 {
+            color: #16a34a;
+        }
+        
+        .text-lg {
+            font-size: 1.125rem;
+            line-height: 1.75rem;
+        }
+        
+        .text-2xl {
+            font-size: 1.5rem;
+            line-height: 2rem;
+        }
+        
+        .grid {
+            display: grid;
+        }
+        
+        .grid-cols-1 {
+            grid-template-columns: repeat(1, minmax(0, 1fr));
+        }
+        
+        .gap-6 {
+            gap: 1.5rem;
+        }
+        
+        .p-6 {
+            padding: 1.5rem;
+        }
+        
+        .mt-6 {
+            margin-top: 1.5rem;
+        }
+        
+        .mt-4 {
+            margin-top: 1rem;
+        }
+        
+        .bg-red-50 {
+            background-color: #fef2f2;
+        }
+        
+        .border-red-200 {
+            border-color: #fecaca;
+        }
+        
+        .rounded-lg {
+            border-radius: calc(var(--radius) + 4px);
+        }
+        
+        .text-red-800 {
+            color: #991b1b;
+        }
+        
+        .text-sm {
+            font-size: 0.875rem;
+            line-height: 1.25rem;
+        }
+        
+        .max-w-4xl {
+            max-width: 56rem;
+        }
+        
+        .mx-auto {
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        @media (min-width: 768px) {
+            .md\:grid-cols-2 {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+        </style>
+        <?php
         return ob_get_clean();
     }
 
