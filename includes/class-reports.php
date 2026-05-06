@@ -342,52 +342,7 @@ class Basmah_Staff_Reports_Reports {
     }
     
     public static function export_to_excel($reports) {
-        require_once BASMAH_STAFF_REPORTS_PLUGIN_DIR . 'vendor/autoload.php';
-        
-        $filename = 'staff-reports-' . date('Y-m-d') . '.xlsx';
-        
-        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment; filename="' . $filename . '"');
-        
-        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
-        
-        // Headers
-        $spreadsheet->getSheet(0)->fromArray([
-            ['Report ID', 'Staff Name', 'Email', 'Report Date', 'Status', 'Task Category', 'Task Description', 'Completion Status', 'Next Action', 'Manager Assigned Task', 'Additional Notes', 'Manager Comment', 'Submission Time']
-        ]);
-        
-        // Data
-        foreach ($reports as $report) {
-            $tasks = json_decode($report['tasks_json'], true);
-            $task_descriptions = [];
-            $task_categories = [];
-            
-            if (is_array($tasks)) {
-                foreach ($tasks as $task) {
-                    $task_descriptions[] = $task['task_category'] . ': ' . $task['task_description'];
-                    $task_categories[] = $task['task_category'];
-                }
-            }
-            
-            $spreadsheet->getActiveSheet()->fromArray([
-                $report['id'],
-                $report['display_name'],
-                $report['user_email'],
-                $report['report_date'],
-                $report['status'],
-                implode('; ', array_unique($task_categories)),
-                implode('; ', $task_descriptions),
-                isset($tasks[0]['completion_status']) ? $tasks[0]['completion_status'] : '',
-                isset($tasks[0]['next_action']) ? $tasks[0]['next_action'] : '',
-                isset($tasks[0]['manager_assigned_task']) ? $tasks[0]['manager_assigned_task'] : '',
-                isset($tasks[0]['additional_notes']) ? $tasks[0]['additional_notes'] : '',
-                $report['manager_comment'] ? $report['manager_comment'] : '',
-                $report['submission_time']
-            ], 'A' . ($spreadsheet->getActiveSheet()->getHighestDataRow() + 1));
-        }
-        
-        $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
-        $writer->save('php://output');
-        exit;
+        // Fallback to CSV if PhpSpreadsheet is not available
+        self::export_to_csv($reports);
     }
 }

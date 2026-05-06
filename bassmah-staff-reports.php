@@ -3,7 +3,7 @@
  * Plugin Name: Bassmah Staff Reports
  * Plugin URI: https://example.com/
  * Description: A comprehensive staff reporting and salary management plugin for WordPress.
- * Version: 1.0.6
+ * Version: 1.0.7
  * Author: Tumit
  * Author URI: https://example.com/
  * License: GPL v2 or later
@@ -16,8 +16,8 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('BASMAH_STAFF_REPORTS_VERSION', '1.0.6');
-define('BASMAH_STAFF_REPORTS_CAPS_VERSION', '1.0.6-roles-2');
+define('BASMAH_STAFF_REPORTS_VERSION', '1.0.7');
+define('BASMAH_STAFF_REPORTS_CAPS_VERSION', '1.0.7-roles-2');
 define('BASMAH_STAFF_REPORTS_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('BASMAH_STAFF_REPORTS_PLUGIN_URL', plugin_dir_url(__FILE__));
 
@@ -37,8 +37,9 @@ if (is_admin()) {
 
 require_once BASMAH_STAFF_REPORTS_PLUGIN_DIR . 'public/class-public.php';
 require_once BASMAH_STAFF_REPORTS_PLUGIN_DIR . 'api/class-api-reports.php';
-require_once BASMAH_STAFF_REPORTS_PLUGIN_DIR . 'api/class-api-salary.php';
-require_once BASMAH_STAFF_REPORTS_PLUGIN_DIR . 'api/class-api-auth.php';
+// Temporarily disabled to fix activation
+// require_once BASMAH_STAFF_REPORTS_PLUGIN_DIR . 'api/class-api-salary.php';
+// require_once BASMAH_STAFF_REPORTS_PLUGIN_DIR . 'api/class-api-auth.php';
 
 register_activation_hook(__FILE__, array('Basmah_Staff_Reports_Activator', 'activate'));
 register_deactivation_hook(__FILE__, array('Basmah_Staff_Reports_Deactivator', 'deactivate'));
@@ -55,7 +56,8 @@ function bassmah_staff_reports_init() {
     
     new Basmah_Staff_Reports_Public();
     new Basmah_Staff_Reports_API_Reports();
-    new Basmah_Staff_Reports_API_Salary();
+    // Temporarily disabled to fix activation
+    // new Basmah_Staff_Reports_API_Salary();
     
     add_filter('login_redirect', 'bassmah_staff_reports_login_redirect', 10, 3);
 }
