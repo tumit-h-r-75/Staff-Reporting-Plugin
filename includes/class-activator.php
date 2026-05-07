@@ -29,7 +29,7 @@ class Bassmah_Staff_Reports_Activator {
         $charset_collate = $wpdb->get_charset_collate();
         
         // Create staff_reports table
-        $sql_reports = "CREATE TABLE {$wpdb->prefix}bassmah_staff_reports (
+        $sql_reports = "CREATE TABLE {$wpdb->prefix}staff_reports (
             id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
             user_id BIGINT(20) UNSIGNED NOT NULL,
             report_date DATE NOT NULL,

@@ -12,13 +12,19 @@ if (!defined('ABSPATH')) {
 
 $current_user = wp_get_current_user();
 $report_class = new Bassmah_Staff_Reports_Report();
-$salary_class = new Bassmah_Staff_Reports_Salary();
+$salary_calculator = new Bassmah_Staff_Reports_Salary_Calculator();
 
 // Get today's report status
 $today_report = $report_class->get_today_report();
 
-// Get dashboard statistics
-$dashboard_stats = $salary_class->get_dashboard_stats($current_user->ID);
+// Get dashboard statistics with salary calculations
+$dashboard_stats = $salary_calculator->get_dashboard_stats($current_user->ID);
+
+// Get current month salary details
+$current_month_salary = $salary_calculator->calculate_monthly_salary($current_user->ID);
+
+// Get salary history
+$salary_history = $salary_calculator->get_salary_history($current_user->ID, 3);
 
 // Get recent reports
 $recent_reports = $report_class->get_my_reports(array(
@@ -80,15 +86,31 @@ $recent_reports = $report_class->get_my_reports(array(
             <div class="bassmah-salary-details">
                 <div class="bassmah-salary-row">
                     <span><?php _e('Monthly Salary:', 'bassmah-staff-reports'); ?></span>
-                    <strong><?php echo isset($dashboard_stats['monthly_salary']) ? number_format($dashboard_stats['monthly_salary'], 2) : '0.00'; ?> <?php echo $dashboard_stats['currency'] ?? 'CAD'; ?></strong>
+                    <strong><?php echo number_format($current_month_salary['monthly_salary'], 2); ?> <?php echo $current_month_salary['currency']; ?></strong>
                 </div>
                 <div class="bassmah-salary-row">
                     <span><?php _e('Daily Rate:', 'bassmah-staff-reports'); ?></span>
-                    <strong><?php echo isset($dashboard_stats['daily_rate']) ? number_format($dashboard_stats['daily_rate'], 2) : '0.00'; ?> <?php echo $dashboard_stats['currency'] ?? 'CAD'; ?></strong>
+                    <strong><?php echo number_format($current_month_salary['daily_rate'], 2); ?> <?php echo $current_month_salary['currency']; ?></strong>
                 </div>
                 <div class="bassmah-salary-row">
-                    <span><?php _e('Expected Earnings:', 'bassmah-staff-reports'); ?></span>
-                    <strong><?php echo isset($dashboard_stats['expected_earnings']) ? number_format($dashboard_stats['expected_earnings'], 2) : '0.00'; ?> <?php echo $dashboard_stats['currency'] ?? 'CAD'; ?></strong>
+                    <span><?php _e('Working Days:', 'bassmah-staff-reports'); ?></span>
+                    <strong><?php echo $current_month_salary['working_days']; ?></strong>
+                </div>
+                <div class="bassmah-salary-row">
+                    <span><?php _e('Present Days:', 'bassmah-staff-reports'); ?></span>
+                    <strong class="bassmah-present"><?php echo $current_month_salary['present_days']; ?></strong>
+                </div>
+                <div class="bassmah-salary-row">
+                    <span><?php _e('Absent Days:', 'bassmah-staff-reports'); ?></span>
+                    <strong class="bassmah-absent"><?php echo $current_month_salary['absent_days']; ?></strong>
+                </div>
+                <div class="bassmah-salary-row bassmah-deduction">
+                    <span><?php _e('Total Deduction:', 'bassmah-staff-reports'); ?></span>
+                    <strong class="bassmah-deduction-amount">-<?php echo number_format($current_month_salary['total_deduction'], 2); ?> <?php echo $current_month_salary['currency']; ?></strong>
+                </div>
+                <div class="bassmah-salary-row bassmah-net-salary">
+                    <span><?php _e('Net Salary:', 'bassmah-staff-reports'); ?></span>
+                    <strong class="bassmah-net-amount"><?php echo number_format($current_month_salary['net_salary'], 2); ?> <?php echo $current_month_salary['currency']; ?></strong>
                 </div>
             </div>
         </div>
@@ -142,6 +164,59 @@ $recent_reports = $report_class->get_my_reports(array(
             </div>
         <?php else: ?>
             <p class="bassmah-no-reports"><?php _e('No reports found.', 'bassmah-staff-reports'); ?></p>
+        <?php endif; ?>
+    </div>
+
+    <!-- Salary History Section -->
+    <div class="bassmah-card bassmah-salary-history">
+        <div class="bassmah-card-header">
+            <h3><?php _e('Salary History', 'bassmah-staff-reports'); ?></h3>
+            <button class="button button-small" onclick="exportSalaryHistory()">
+                <?php _e('Export History', 'bassmah-staff-reports'); ?>
+            </button>
+        </div>
+        
+        <?php if (!empty($salary_history)): ?>
+            <div class="bassmah-history-table">
+                <table class="wp-list-table widefat striped">
+                    <thead>
+                        <tr>
+                            <th><?php _e('Month', 'bassmah-staff-reports'); ?></th>
+                            <th><?php _e('Gross Salary', 'bassmah-staff-reports'); ?></th>
+                            <th><?php _e('Deductions', 'bassmah-staff-reports'); ?></th>
+                            <th><?php _e('Net Salary', 'bassmah-staff-reports'); ?></th>
+                            <th><?php _e('Attendance', 'bassmah-staff-reports'); ?></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($salary_history as $history): ?>
+                            <?php $calc = $history['calculation']; ?>
+                            <tr>
+                                <td><?php echo $history['month_display']; ?></td>
+                                <td><?php echo number_format($calc['monthly_salary'], 2); ?> <?php echo $calc['currency']; ?></td>
+                                <td class="bassmah-deduction-cell">
+                                    <?php if ($calc['total_deduction'] > 0): ?>
+                                        <span class="bassmah-deduction-badge">-<?php echo number_format($calc['total_deduction'], 2); ?></span>
+                                    <?php else: ?>
+                                        -
+                                    <?php endif; ?>
+                                </td>
+                                <td class="bassmah-net-salary-cell">
+                                    <strong><?php echo number_format($calc['net_salary'], 2); ?> <?php echo $calc['currency']; ?></strong>
+                                </td>
+                                <td>
+                                    <div class="bassmah-attendance-bar">
+                                        <div class="bassmah-attendance-fill" style="width: <?php echo min(100, round(($calc['present_days'] / max(1, $calc['working_days'])) * 100)); ?>%"></div>
+                                        <span><?php echo $calc['present_days']; ?>/<?php echo $calc['working_days']; ?> days</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php else: ?>
+            <p class="bassmah-no-history"><?php _e('No salary history available.', 'bassmah-staff-reports'); ?></p>
         <?php endif; ?>
     </div>
 
@@ -390,6 +465,98 @@ $recent_reports = $report_class->get_my_reports(array(
     font-size: 20px;
 }
 
+.bassmah-present {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.bassmah-absent {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.bassmah-deduction {
+    border-top: 1px solid #e9ecef;
+    margin-top: 10px;
+    padding-top: 10px;
+}
+
+.bassmah-deduction-amount {
+    color: #dc3545;
+}
+
+.bassmah-net-salary {
+    background: #e9ecef;
+    padding: 10px;
+    border-radius: 4px;
+    margin-top: 5px;
+}
+
+.bassmah-net-amount {
+    color: #28a745;
+    font-size: 18px;
+}
+
+.bassmah-deduction-cell {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.bassmah-deduction-badge {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 12px;
+}
+
+.bassmah-net-salary-cell {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.bassmah-attendance-bar {
+    position: relative;
+    background: #e9ecef;
+    height: 20px;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 5px;
+}
+
+.bassmah-attendance-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #28a745, #20c997);
+    transition: width 0.3s ease;
+}
+
+.bassmah-attendance-bar span {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 11px;
+    font-weight: bold;
+    color: #495057;
+    z-index: 1;
+}
+
+.bassmah-history-table {
+    overflow-x: auto;
+}
+
+.bassmah-history-table table {
+    margin: 0;
+    min-width: 600px;
+}
+
+.bassmah-no-history {
+    text-align: center;
+    padding: 40px 20px;
+    color: #6c757d;
+    font-style: italic;
+}
+
 .bassmah-modal {
     position: fixed;
     top: 0;
@@ -471,6 +638,10 @@ function viewAllReports() {
 function exportReports() {
     // Implementation to export reports
     console.log('Export reports');
+}
+
+function exportSalaryHistory() {
+    window.location.href = bassmah_public.ajax_url + '?action=bassmah_export_salary_history&user_id=<?php echo $current_user->ID; ?>&nonce=' + bassmah_public.nonce;
 }
 
 function viewCalendar() {

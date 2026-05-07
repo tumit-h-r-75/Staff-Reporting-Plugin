@@ -291,11 +291,23 @@ class Bassmah_Staff_Reports_Admin {
         $action = $_POST['action_type'] ?? '';
 
         switch ($action) {
+            case 'save_salary_settings':
+                $this->save_salary_settings();
+                break;
             case 'export_reports':
                 $this->export_reports();
                 break;
-            case 'export_salary':
-                $this->export_salary();
+            case 'get_manager_report_details':
+                $this->get_manager_report_details();
+                break;
+            case 'update_report_status':
+                $this->update_report_status();
+                break;
+            case 'export_manager_reports':
+                $this->export_manager_reports();
+                break;
+            case 'export_salary_summary':
+                $this->export_salary_summary();
                 break;
             default:
                 wp_send_json_error(__('Invalid action', 'bassmah-staff-reports'));
@@ -364,5 +376,331 @@ class Bassmah_Staff_Reports_Admin {
         $csv = $salary_class->export_salary_csv($user_ids, $month);
 
         wp_send_json_success(array('csv' => $csv));
+    }
+
+    /**
+     * Get manager report details
+     */
+    private function get_manager_report_details() {
+        if (!current_user_can('bassmah_view_all_reports')) {
+            wp_send_json_error(__('You do not have permission to view reports.', 'bassmah-staff-reports'));
+        }
+
+        $report_id = intval($_POST['report_id'] ?? 0);
+        if (!$report_id) {
+            wp_send_json_error(__('Invalid report ID.', 'bassmah-staff-reports'));
+        }
+
+        $report_class = new Bassmah_Staff_Reports_Report();
+        $report = $report_class->get_report($report_id);
+
+        if (!$report) {
+            wp_send_json_error(__('Report not found.', 'bassmah-staff-reports'));
+        }
+
+        $user = get_userdata($report->user_id);
+        $tasks = is_array($report->tasks) ? $report->tasks : json_decode($report->tasks, true);
+        
+        ob_start();
+        ?>
+        <div class="bassmah-report-details">
+            <div class="bassmah-report-header">
+                <h4><?php echo date_i18n('l, F j, Y', strtotime($report->report_date)); ?></h4>
+                <span class="bassmah-status-badge bassmah-status-<?php echo $report->status; ?>">
+                    <?php 
+                    switch($report->status) {
+                        case 'submitted':
+                            _e('Submitted', 'bassmah-staff-reports');
+                            break;
+                        case 'approved':
+                            _e('Approved', 'bassmah-staff-reports');
+                            break;
+                        case 'rejected':
+                            _e('Rejected', 'bassmah-staff-reports');
+                            break;
+                        default:
+                            echo esc_html($report->status);
+                    }
+                    ?>
+                </span>
+            </div>
+
+            <div class="bassmah-report-meta">
+                <p><strong><?php _e('Employee:', 'bassmah-staff-reports'); ?></strong> <?php echo esc_html($user->display_name); ?></p>
+                <p><strong><?php _e('Email:', 'bassmah-staff-reports'); ?></strong> <?php echo esc_html($user->user_email); ?></p>
+                <p><strong><?php _e('Role:', 'bassmah-staff-reports'); ?></strong> <?php echo esc_html(Bassmah_Staff_Reports_Roles::get_user_role_display($report->user_id)); ?></p>
+                <p><strong><?php _e('Submitted:', 'bassmah-staff-reports'); ?></strong> <?php echo date_i18n('g:i A', strtotime($report->submission_time)); ?></p>
+                <?php if ($report->ip_address): ?>
+                    <p><strong><?php _e('IP Address:', 'bassmah-staff-reports'); ?></strong> <?php echo esc_html($report->ip_address); ?></p>
+                <?php endif; ?>
+            </div>
+
+            <div class="bassmah-report-tasks">
+                <h5><?php _e('Tasks Completed:', 'bassmah-staff-reports'); ?></h5>
+                <?php if (!empty($tasks) && is_array($tasks)): ?>
+                    <ul class="bassmah-tasks-list">
+                        <?php foreach ($tasks as $index => $task): ?>
+                            <li class="bassmah-task-item">
+                                <div class="bassmah-task-description">
+                                    <?php echo esc_html($task['task_description'] ?? ''); ?>
+                                </div>
+                                <?php if (!empty($task['task_category'])): ?>
+                                    <span class="bassmah-task-category"><?php echo esc_html($task['task_category']); ?></span>
+                                <?php endif; ?>
+                                <?php if (!empty($task['task_status'])): ?>
+                                    <span class="bassmah-task-status bassmah-task-<?php echo esc_attr($task['task_status']); ?>">
+                                        <?php 
+                                        switch($task['task_status']) {
+                                            case 'completed':
+                                                _e('Completed', 'bassmah-staff-reports');
+                                                break;
+                                            case 'in_progress':
+                                                _e('In Progress', 'bassmah-staff-reports');
+                                                break;
+                                            case 'not_completed':
+                                                _e('Not Completed', 'bassmah-staff-reports');
+                                                break;
+                                            default:
+                                                echo esc_html($task['task_status']);
+                                        }
+                                        ?>
+                                    </span>
+                                <?php endif; ?>
+                                <?php if (!empty($task['next_action'])): ?>
+                                    <div class="bassmah-next-action">
+                                        <strong><?php _e('Next Action:', 'bassmah-staff-reports'); ?></strong>
+                                        <?php echo esc_html($task['next_action']); ?>
+                                    </div>
+                                <?php endif; ?>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                <?php else: ?>
+                    <p><?php _e('No tasks found.', 'bassmah-staff-reports'); ?></p>
+                <?php endif; ?>
+            </div>
+
+            <?php if ($report->manager_comment): ?>
+                <div class="bassmah-manager-comment">
+                    <h5><?php _e('Manager Comment:', 'bassmah-staff-reports'); ?></h5>
+                    <div class="bassmah-comment-content">
+                        <?php echo wpautop(esc_html($report->manager_comment)); ?>
+                    </div>
+                </div>
+            <?php endif; ?>
+
+            <div class="bassmah-report-footer">
+                <p class="bassmah-report-id">
+                    <small><?php printf(__('Report ID: #%d', 'bassmah-staff-reports'), $report->id); ?></small>
+                </p>
+                <?php if ($report->status === 'submitted'): ?>
+                    <div class="bassmah-manager-actions">
+                        <button class="button button-primary" onclick="approveReport(<?php echo $report->id; ?>)">
+                            <?php _e('Approve', 'bassmah-staff-reports'); ?>
+                        </button>
+                        <button class="button" onclick="rejectReport(<?php echo $report->id; ?>)">
+                            <?php _e('Reject', 'bassmah-staff-reports'); ?>
+                        </button>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+        <?php
+        $html = ob_get_clean();
+
+        wp_send_json_success(array('html' => $html));
+    }
+
+    /**
+     * Update report status
+     */
+    private function update_report_status() {
+        if (!current_user_can('bassmah_comment_reports')) {
+            wp_send_json_error(__('You do not have permission to update reports.', 'bassmah-staff-reports'));
+        }
+
+        $report_id = intval($_POST['report_id'] ?? 0);
+        $status = sanitize_text_field($_POST['status'] ?? '');
+        $comment = sanitize_textarea_field($_POST['comment'] ?? '');
+
+        if (!$report_id || !in_array($status, array('approve', 'reject'))) {
+            wp_send_json_error(__('Invalid parameters.', 'bassmah-staff-reports'));
+        }
+
+        $report_class = new Bassmah_Staff_Reports_Report();
+        $result = $report_class->update_report_status($report_id, $status, $comment);
+
+        if (is_wp_error($result)) {
+            wp_send_json_error($result->get_error_message());
+        }
+
+        wp_send_json_success(array('message' => __('Report updated successfully.', 'bassmah-staff-reports')));
+    }
+
+    /**
+     * Export manager reports
+     */
+    private function export_manager_reports() {
+        if (!current_user_can('bassmah_export_reports')) {
+            wp_send_json_error(__('You do not have permission to export reports.', 'bassmah-staff-reports'));
+        }
+
+        $filters = array(
+            'date_from' => $_GET['date_from'] ?? '',
+            'date_to' => $_GET['date_to'] ?? '',
+            'user_id' => intval($_GET['employee_id'] ?? 0),
+            'status' => $_GET['status'] ?? ''
+        );
+
+        $report_class = new Bassmah_Staff_Reports_Report();
+        $reports = $report_class->get_reports($filters);
+
+        $filename = 'manager-reports-' . date('Y-m-d') . '.csv';
+        
+        header('Content-Type: text/csv');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        
+        $output = fopen('php://output', 'w');
+        
+        // CSV headers
+        fputcsv($output, array(
+            __('Report Date', 'bassmah-staff-reports'),
+            __('Employee Name', 'bassmah-staff-reports'),
+            __('Email', 'bassmah-staff-reports'),
+            __('Role', 'bassmah-staff-reports'),
+            __('Status', 'bassmah-staff-reports'),
+            __('Submission Time', 'bassmah-staff-reports'),
+            __('Tasks', 'bassmah-staff-reports'),
+            __('Manager Comment', 'bassmah-staff-reports')
+        ));
+        
+        // CSV data
+        foreach ($reports as $report) {
+            $user = get_userdata($report->user_id);
+            $tasks = is_array($report->tasks) ? $report->tasks : json_decode($report->tasks, true);
+            $task_list = '';
+            
+            if (!empty($tasks) && is_array($tasks)) {
+                $task_descriptions = array();
+                foreach ($tasks as $task) {
+                    $task_descriptions[] = $task['task_description'] ?? '';
+                }
+                $task_list = implode('; ', $task_descriptions);
+            }
+            
+            fputcsv($output, array(
+                $report->report_date,
+                $user ? $user->display_name : 'Unknown',
+                $user ? $user->user_email : 'Unknown',
+                Bassmah_Staff_Reports_Roles::get_user_role_display($report->user_id),
+                $report->status,
+                $report->submission_time,
+                $task_list,
+                $report->manager_comment ?? ''
+            ));
+        }
+        
+        fclose($output);
+        exit;
+    }
+
+    /**
+     * Export salary summary
+     */
+    private function export_salary_summary() {
+        if (!current_user_can('bassmah_view_all_salary')) {
+            wp_send_json_error(__('You do not have permission to export salary data.', 'bassmah-staff-reports'));
+        }
+
+        $date_from = $_GET['date_from'] ?? date('Y-m-01');
+        $date_to = $_GET['date_to'] ?? date('Y-m-d');
+        $employee_id = intval($_GET['employee_id'] ?? 0);
+
+        $salary_calculator = new Bassmah_Staff_Reports_Salary_Calculator();
+        
+        if ($employee_id > 0) {
+            // Export for specific employee
+            $summary = $salary_calculator->generate_salary_summary($employee_id, $date_from, $date_to);
+        } else {
+            // Export for all employees
+            $staff_users = get_users(array(
+                'role__in' => array('bassmah_staff', 'bassmah_manager'),
+                'orderby' => 'display_name'
+            ));
+            
+            $summary = array('monthly_breakdown' => array());
+            
+            foreach ($staff_users as $user) {
+                $user_summary = $salary_calculator->generate_salary_summary($user->ID, $date_from, $date_to);
+                foreach ($user_summary['monthly_breakdown'] as $month_data) {
+                    $summary['monthly_breakdown'][] = array_merge($month_data, array(
+                        'employee_name' => $user->display_name,
+                        'employee_email' => $user->user_email
+                    ));
+                }
+            }
+        }
+
+        $filename = 'salary-summary-' . date('Y-m-d') . '.csv';
+        
+        header('Content-Type: text/csv');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        
+        $output = fopen('php://output', 'w');
+        
+        // CSV headers
+        if ($employee_id > 0) {
+            fputcsv($output, array(
+                __('Month', 'bassmah-staff-reports'),
+                __('Gross Salary', 'bassmah-staff-reports'),
+                __('Working Days', 'bassmah-staff-reports'),
+                __('Present Days', 'bassmah-staff-reports'),
+                __('Absent Days', 'bassmah-staff-reports'),
+                __('Daily Rate', 'bassmah-staff-reports'),
+                __('Total Deduction', 'bassmah-staff-reports'),
+                __('Net Salary', 'bassmah-staff-reports'),
+                __('Currency', 'bassmah-staff-reports')
+            ));
+            
+            // CSV data
+            foreach ($summary['monthly_breakdown'] as $month_data) {
+                $calc = $month_data['calculation'];
+                fputcsv($output, array(
+                    $month_data['month_display'],
+                    $calc['monthly_salary'],
+                    $calc['working_days'],
+                    $calc['present_days'],
+                    $calc['absent_days'],
+                    $calc['daily_rate'],
+                    $calc['total_deduction'],
+                    $calc['net_salary'],
+                    $calc['currency']
+                ));
+            }
+        } else {
+            fputcsv($output, array(
+                __('Employee', 'bassmah-staff-reports'),
+                __('Month', 'bassmah-staff-reports'),
+                __('Gross Salary', 'bassmah-staff-reports'),
+                __('Net Salary', 'bassmah-staff-reports'),
+                __('Deductions', 'bassmah-staff-reports'),
+                __('Currency', 'bassmah-staff-reports')
+            ));
+            
+            foreach ($summary['monthly_breakdown'] as $month_data) {
+                $calc = $month_data['calculation'];
+                fputcsv($output, array(
+                    $month_data['employee_name'],
+                    $month_data['month_display'],
+                    $calc['monthly_salary'],
+                    $calc['net_salary'],
+                    $calc['total_deduction'],
+                    $calc['currency']
+                ));
+            }
+        }
+        
+        fclose($output);
+        exit;
     }
 }

@@ -89,6 +89,8 @@ class Bassmah_Staff_Reports_Public {
         add_action('wp_ajax_nopriv_bassmah_get_report_details', array($this, 'handle_ajax_requests'));
         add_action('wp_ajax_bassmah_export_reports', array($this, 'handle_ajax_requests'));
         add_action('wp_ajax_nopriv_bassmah_export_reports', array($this, 'handle_ajax_requests'));
+        add_action('wp_ajax_bassmah_export_salary_history', array($this, 'handle_ajax_requests'));
+        add_action('wp_ajax_nopriv_bassmah_export_salary_history', array($this, 'handle_ajax_requests'));
     }
 
     /**
@@ -230,6 +232,9 @@ class Bassmah_Staff_Reports_Public {
                 break;
             case 'export_reports':
                 $this->export_reports_frontend();
+                break;
+            case 'export_salary_history':
+                $this->export_salary_history_frontend();
                 break;
             default:
                 wp_send_json_error(__('Invalid action', 'bassmah-staff-reports'));
@@ -635,5 +640,23 @@ class Bassmah_Staff_Reports_Public {
         
         fclose($output);
         exit;
+    }
+
+    /**
+     * Export salary history for frontend
+     *
+     * @since    1.0.0
+     */
+    private function export_salary_history_frontend() {
+        if (!current_user_can('bassmah_view_own_salary')) {
+            wp_send_json_error(__('You do not have permission to export salary data.', 'bassmah-staff-reports'));
+        }
+
+        $user_id = intval($_GET['user_id'] ?? get_current_user_id());
+        $from_date = $_GET['from_date'] ?? date('Y-m-01');
+        $to_date = $_GET['to_date'] ?? date('Y-m-d');
+
+        $salary_calculator = new Bassmah_Staff_Reports_Salary_Calculator();
+        $salary_calculator::export_salary_csv($user_id, $from_date, $to_date);
     }
 }
