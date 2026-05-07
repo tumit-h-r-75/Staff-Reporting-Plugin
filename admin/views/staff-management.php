@@ -134,7 +134,18 @@ function editUser(userId) {
 
 function deleteUser(userId) {
     if (confirm('<?php _e('Are you sure you want to delete this user?', 'bassmah-staff-reports'); ?>')) {
-        window.location.href = '<?php echo admin_url('admin-ajax.php'); ?>?action=delete_user&user_id=' + userId + '&_wpnonce=<?php echo wp_create_nonce('delete_user_' . userId); ?>';
+        var nonceUrl = '<?php echo admin_url('admin-ajax.php'); ?>?action=delete_user&user_id=' + userId;
+        // We'll generate the nonce via AJAX call instead
+        fetch(nonceUrl + '&generate_nonce=1')
+            .then(response => response.json())
+            .then(data => {
+                if (data.nonce) {
+                    window.location.href = nonceUrl + '&_wpnonce=' + data.nonce;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
     }
 }
 </script>

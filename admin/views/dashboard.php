@@ -49,25 +49,25 @@ foreach ($staff_users as $staff) {
     <div class="bassmah-dashboard">
         <div class="bassmah-stat-card">
             <h3><?php _e('Total Reports This Month', 'bassmah-staff-reports'); ?></h3>
-            <p class="bassmah-stat-number bassmah-stat-total-reports"><?php echo $statistics['total_reports']; ?></p>
+            <p class="bassmah-stat-number bassmah-stat-total-reports"><?php echo isset($statistics['total_reports']) ? $statistics['total_reports'] : 0; ?></p>
             <p class="bassmah-stat-label"><?php echo date_i18n('F Y'); ?></p>
         </div>
         
         <div class="bassmah-stat-card">
             <h3><?php _e('Active Staff', 'bassmah-staff-reports'); ?></h3>
-            <p class="bassmah-stat-number bassmah-stat-active-staff"><?php echo count($staff_users); ?></p>
+            <p class="bassmah-stat-number bassmah-stat-active-staff"><?php echo is_array($staff_users) ? count($staff_users) : 0; ?></p>
             <p class="bassmah-stat-label"><?php _e('Total staff members', 'bassmah-staff-reports'); ?></p>
         </div>
         
         <div class="bassmah-stat-card">
             <h3><?php _e('Submitted Today', 'bassmah-staff-reports'); ?></h3>
-            <p class="bassmah-stat-number bassmah-stat-submitted-today"><?php echo $statistics['submitted_reports']; ?></p>
+            <p class="bassmah-stat-number bassmah-stat-submitted-today"><?php echo isset($statistics['submitted_reports']) ? $statistics['submitted_reports'] : 0; ?></p>
             <p class="bassmah-stat-label"><?php _e('Reports submitted today', 'bassmah-staff-reports'); ?></p>
         </div>
         
         <div class="bassmah-stat-card">
             <h3><?php _e('Missing Today', 'bassmah-staff-reports'); ?></h3>
-            <p class="bassmah-stat-number bassmah-stat-missing-today"><?php echo count($missing_reports); ?></p>
+            <p class="bassmah-stat-number bassmah-stat-missing-today"><?php echo is_array($missing_reports) ? count($missing_reports) : 0; ?></p>
             <p class="bassmah-stat-label"><?php _e('Staff who haven\'t submitted', 'bassmah-staff-reports'); ?></p>
         </div>
     </div>

@@ -83,6 +83,12 @@ class Bassmah_Staff_Reports_Public {
                 'error_occurred' => __('An error occurred. Please try again.', 'bassmah-staff-reports')
             )
         ));
+        
+        // Add AJAX handlers
+        add_action('wp_ajax_bassmah_get_report_details', array($this, 'handle_ajax_requests'));
+        add_action('wp_ajax_nopriv_bassmah_get_report_details', array($this, 'handle_ajax_requests'));
+        add_action('wp_ajax_bassmah_export_reports', array($this, 'handle_ajax_requests'));
+        add_action('wp_ajax_nopriv_bassmah_export_reports', array($this, 'handle_ajax_requests'));
     }
 
     /**
@@ -219,6 +225,12 @@ class Bassmah_Staff_Reports_Public {
             case 'get_dashboard_data':
                 $this->get_dashboard_data_frontend();
                 break;
+            case 'get_report_details':
+                $this->get_report_details_frontend();
+                break;
+            case 'export_reports':
+                $this->export_reports_frontend();
+                break;
             default:
                 wp_send_json_error(__('Invalid action', 'bassmah-staff-reports'));
         }
@@ -354,5 +366,274 @@ class Bassmah_Staff_Reports_Public {
             'dashboard' => $dashboard_data,
             'recent_reports' => $formatted_recent_reports
         ));
+    }
+
+    /**
+     * Get report details for frontend display
+     *
+     * @since    1.0.0
+     */
+    private function get_report_details_frontend() {
+        if (!current_user_can('bassmah_view_own_reports')) {
+            wp_send_json_error(__('You do not have permission to view reports.', 'bassmah-staff-reports'));
+        }
+
+        $report_id = intval($_POST['report_id'] ?? 0);
+        if (!$report_id) {
+            wp_send_json_error(__('Invalid report ID.', 'bassmah-staff-reports'));
+        }
+
+        $report_class = new Bassmah_Staff_Reports_Report();
+        $report = $report_class->get_report($report_id);
+
+        if (!$report) {
+            wp_send_json_error(__('Report not found.', 'bassmah-staff-reports'));
+        }
+
+        // Check if user owns this report
+        if ($report->user_id !== get_current_user_id() && !current_user_can('bassmah_view_all_reports')) {
+            wp_send_json_error(__('You do not have permission to view this report.', 'bassmah-staff-reports'));
+        }
+
+        // Format tasks for display
+        $tasks = is_array($report->tasks) ? $report->tasks : json_decode($report->tasks, true);
+        
+        ob_start();
+        ?>
+        <div class="bassmah-report-details">
+            <div class="bassmah-report-header">
+                <h4><?php echo date_i18n('l, F j, Y', strtotime($report->report_date)); ?></h4>
+                <span class="bassmah-status-badge bassmah-status-<?php echo $report->status; ?>">
+                    <?php 
+                    switch($report->status) {
+                        case 'submitted':
+                            _e('Submitted', 'bassmah-staff-reports');
+                            break;
+                        case 'approved':
+                            _e('Approved', 'bassmah-staff-reports');
+                            break;
+                        case 'rejected':
+                            _e('Rejected', 'bassmah-staff-reports');
+                            break;
+                        default:
+                            echo esc_html($report->status);
+                    }
+                    ?>
+                </span>
+            </div>
+
+            <div class="bassmah-report-meta">
+                <p><strong><?php _e('Submitted:', 'bassmah-staff-reports'); ?></strong> <?php echo date_i18n('g:i A', strtotime($report->submission_time)); ?></p>
+                <?php if ($report->ip_address): ?>
+                    <p><strong><?php _e('IP Address:', 'bassmah-staff-reports'); ?></strong> <?php echo esc_html($report->ip_address); ?></p>
+                <?php endif; ?>
+            </div>
+
+            <div class="bassmah-report-tasks">
+                <h5><?php _e('Tasks Completed:', 'bassmah-staff-reports'); ?></h5>
+                <?php if (!empty($tasks) && is_array($tasks)): ?>
+                    <ul class="bassmah-tasks-list">
+                        <?php foreach ($tasks as $task): ?>
+                            <li class="bassmah-task-item">
+                                <div class="bassmah-task-description">
+                                    <?php echo esc_html($task['task_description'] ?? ''); ?>
+                                </div>
+                                <?php if (!empty($task['task_category'])): ?>
+                                    <span class="bassmah-task-category"><?php echo esc_html($task['task_category']); ?></span>
+                                <?php endif; ?>
+                                <?php if (!empty($task['task_status'])): ?>
+                                    <span class="bassmah-task-status bassmah-task-<?php echo esc_attr($task['task_status']); ?>">
+                                        <?php 
+                                        switch($task['task_status']) {
+                                            case 'completed':
+                                                _e('Completed', 'bassmah-staff-reports');
+                                                break;
+                                            case 'in_progress':
+                                                _e('In Progress', 'bassmah-staff-reports');
+                                                break;
+                                            case 'not_completed':
+                                                _e('Not Completed', 'bassmah-staff-reports');
+                                                break;
+                                            default:
+                                                echo esc_html($task['task_status']);
+                                        }
+                                        ?>
+                                    </span>
+                                <?php endif; ?>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                <?php else: ?>
+                    <p><?php _e('No tasks found.', 'bassmah-staff-reports'); ?></p>
+                <?php endif; ?>
+            </div>
+
+            <?php if ($report->manager_comment): ?>
+                <div class="bassmah-manager-comment">
+                    <h5><?php _e('Manager Comment:', 'bassmah-staff-reports'); ?></h5>
+                    <div class="bassmah-comment-content">
+                        <?php echo wpautop(esc_html($report->manager_comment)); ?>
+                    </div>
+                </div>
+            <?php endif; ?>
+
+            <div class="bassmah-report-footer">
+                <p class="bassmah-report-id">
+                    <small><?php printf(__('Report ID: #%d', 'bassmah-staff-reports'), $report->id); ?></small>
+                </p>
+            </div>
+        </div>
+
+        <style>
+        .bassmah-report-details {
+            max-width: 100%;
+        }
+        .bassmah-report-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e9ecef;
+        }
+        .bassmah-report-meta p {
+            margin: 5px 0;
+            color: #6c757d;
+        }
+        .bassmah-tasks-list {
+            list-style: none;
+            padding: 0;
+            margin: 15px 0;
+        }
+        .bassmah-task-item {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+        .bassmah-task-description {
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+        .bassmah-task-category {
+            background: #0073aa;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 11px;
+            margin-right: 8px;
+        }
+        .bassmah-task-status {
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 11px;
+        }
+        .bassmah-task-completed {
+            background: #d4edda;
+            color: #155724;
+        }
+        .bassmah-task-in_progress {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .bassmah-task-not_completed {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .bassmah-manager-comment {
+            background: #e9ecef;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        .bassmah-comment-content {
+            margin-top: 10px;
+        }
+        .bassmah-report-footer {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #e9ecef;
+        }
+        </style>
+        <?php
+        $html = ob_get_clean();
+
+        wp_send_json_success(array('html' => $html));
+    }
+
+    /**
+     * Export reports to CSV
+     *
+     * @since    1.0.0
+     */
+    private function export_reports_frontend() {
+        if (!current_user_can('bassmah_view_own_reports')) {
+            wp_send_json_error(__('You do not have permission to export reports.', 'bassmah-staff-reports'));
+        }
+
+        $date_from = $_GET['date_from'] ?? '';
+        $date_to = $_GET['date_to'] ?? '';
+        $status = $_GET['status'] ?? '';
+
+        $args = array();
+        if ($date_from) {
+            $args['date_from'] = $date_from;
+        }
+        if ($date_to) {
+            $args['date_to'] = $date_to;
+        }
+        if ($status) {
+            $args['status'] = $status;
+        }
+
+        $report_class = new Bassmah_Staff_Reports_Report();
+        $reports = $report_class->get_my_reports($args);
+
+        if (empty($reports)) {
+            wp_send_json_error(__('No reports found to export.', 'bassmah-staff-reports'));
+        }
+
+        // Generate CSV
+        $filename = 'staff-reports-' . date('Y-m-d') . '.csv';
+        
+        header('Content-Type: text/csv');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        
+        $output = fopen('php://output', 'w');
+        
+        // CSV headers
+        fputcsv($output, array(
+            __('Report Date', 'bassmah-staff-reports'),
+            __('Submission Time', 'bassmah-staff-reports'),
+            __('Status', 'bassmah-staff-reports'),
+            __('Tasks', 'bassmah-staff-reports'),
+            __('Manager Comment', 'bassmah-staff-reports')
+        ));
+        
+        // CSV data
+        foreach ($reports as $report) {
+            $tasks = is_array($report->tasks) ? $report->tasks : json_decode($report->tasks, true);
+            $task_list = '';
+            
+            if (!empty($tasks) && is_array($tasks)) {
+                $task_descriptions = array();
+                foreach ($tasks as $task) {
+                    $task_descriptions[] = $task['task_description'] ?? '';
+                }
+                $task_list = implode('; ', $task_descriptions);
+            }
+            
+            fputcsv($output, array(
+                $report->report_date,
+                $report->submission_time,
+                $report->status,
+                $task_list,
+                $report->manager_comment ?? ''
+            ));
+        }
+        
+        fclose($output);
+        exit;
     }
 }

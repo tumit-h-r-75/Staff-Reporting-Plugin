@@ -12,7 +12,8 @@
  * @package    Bassmah_Staff_Reports
  * @author     Tumit <tumit@bassmah.ca>
  */
-class Bassmah_Staff_Reports {
+if (!class_exists('Bassmah_Staff_Reports')) {
+    class Bassmah_Staff_Reports {
 
     /**
      * The loader that's responsible for maintaining and registering all hooks that power
@@ -193,5 +194,6 @@ class Bassmah_Staff_Reports {
      */
     public function get_version() {
         return $this->version;
+    }
     }
 }
