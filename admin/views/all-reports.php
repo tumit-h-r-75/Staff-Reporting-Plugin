@@ -227,9 +227,9 @@ $users = get_users(array(
                                 ?>
                             </td>
                             <td>
-                                <a href="<?php echo admin_url('admin.php?page=bassmah-report-details&report_id=' . $report->id); ?>" class="button button-small">
+                                <button type="button" class="button button-small" onclick="viewReportDetails(<?php echo $report->id; ?>)">
                                     <?php _e('View', 'bassmah-staff-reports'); ?>
-                                </a>
+                                </button>
                                 <?php if (current_user_can('bassmah_comment_reports')): ?>
                                     <button class="button button-small" onclick="addComment(<?php echo $report->id; ?>)">
                                         <?php _e('Comment', 'bassmah-staff-reports'); ?>
@@ -248,18 +248,222 @@ $users = get_users(array(
     </div>
 </div>
 
-<script>
-var addCommentNonce = '<?php echo wp_create_nonce('add_comment'); ?>';
+<!-- Report Details Modal -->
+<div id="bassmah-report-details-modal" class="bassmah-modal" style="display:none;">
+    <div class="bassmah-modal-content bassmah-large-modal">
+        <div class="bassmah-modal-header">
+            <h3><?php _e('Report Details', 'bassmah-staff-reports'); ?></h3>
+            <button class="bassmah-modal-close" type="button" onclick="hideReportDetails()">&times;</button>
+        </div>
+        <div class="bassmah-modal-body" id="bassmah-report-details-content">
+            <div class="bassmah-loading"><?php _e('Loading...', 'bassmah-staff-reports'); ?></div>
+        </div>
+    </div>
+</div>
 
-function addComment(reportId) {
-    var comment = prompt('<?php _e('Enter your comment:', 'bassmah-staff-reports'); ?>');
-    if (comment) {
-        window.location.href = '<?php echo admin_url('admin-ajax.php'); ?>?action=add_comment&report_id=' + reportId + '&comment=' + encodeURIComponent(comment) + '&_wpnonce=' + addCommentNonce;
-    }
+<!-- Comment Modal -->
+<div id="bassmah-comment-modal" class="bassmah-modal" style="display:none;">
+    <div class="bassmah-modal-content">
+        <div class="bassmah-modal-header">
+            <h3 id="bassmah-comment-title"><?php _e('Add Comment', 'bassmah-staff-reports'); ?></h3>
+            <button class="bassmah-modal-close" type="button" onclick="hideCommentModal()">&times;</button>
+        </div>
+        <div class="bassmah-modal-body">
+            <form id="bassmah-comment-form">
+                <input type="hidden" id="bassmah-comment-report-id">
+                <input type="hidden" id="bassmah-comment-action">
+                <div class="bassmah-form-group">
+                    <label for="bassmah-comment-text"><?php _e('Comment:', 'bassmah-staff-reports'); ?></label>
+                    <textarea id="bassmah-comment-text" rows="5" class="large-text" required></textarea>
+                </div>
+                <div class="bassmah-form-actions">
+                    <button type="submit" class="button button-primary"><?php _e('Submit', 'bassmah-staff-reports'); ?></button>
+                    <button type="button" class="button" onclick="hideCommentModal()"><?php _e('Cancel', 'bassmah-staff-reports'); ?></button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function viewReportDetails(reportId) {
+    var modal = document.getElementById('bassmah-report-details-modal');
+    var content = document.getElementById('bassmah-report-details-content');
+    content.innerHTML = '<div class="bassmah-loading"><?php _e('Loading...', 'bassmah-staff-reports'); ?></div>';
+    modal.style.display = 'block';
+
+    var params = new URLSearchParams({
+        action: 'bassmah_admin_ajax',
+        nonce: '<?php echo wp_create_nonce('bassmah_admin_nonce'); ?>',
+        action_type: 'get_manager_report_details',
+        report_id: reportId
+    });
+
+    fetch(ajaxurl, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: params.toString()
+    })
+    .then(function(response) { return response.json(); })
+    .then(function(data) {
+        if (data.success) {
+            content.innerHTML = data.data.html;
+        } else {
+            content.innerHTML = '<div class="bassmah-error">' + (data.data || '<?php _e('Unable to load report details.', 'bassmah-staff-reports'); ?>') + '</div>';
+        }
+    })
+    .catch(function() {
+        content.innerHTML = '<div class="bassmah-error"><?php _e('Error loading report details.', 'bassmah-staff-reports'); ?></div>';
+    });
 }
+
+function hideReportDetails() {
+    document.getElementById('bassmah-report-details-modal').style.display = 'none';
+}
+
+function approveReport(reportId) {
+    showCommentModal(reportId, 'approve');
+}
+
+function rejectReport(reportId) {
+    showCommentModal(reportId, 'reject');
+}
+
+function showCommentModal(reportId, action) {
+    document.getElementById('bassmah-comment-report-id').value = reportId;
+    document.getElementById('bassmah-comment-action').value = action;
+    document.getElementById('bassmah-comment-title').textContent =
+        action === 'approve' ? '<?php _e('Approve Report', 'bassmah-staff-reports'); ?>' :
+        '<?php _e('Reject Report', 'bassmah-staff-reports'); ?>';
+    document.getElementById('bassmah-comment-modal').style.display = 'block';
+}
+
+function hideCommentModal() {
+    document.getElementById('bassmah-comment-modal').style.display = 'none';
+    document.getElementById('bassmah-comment-form').reset();
+}
+
+document.getElementById('bassmah-comment-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    var reportId = document.getElementById('bassmah-comment-report-id').value;
+    var action = document.getElementById('bassmah-comment-action').value;
+    var comment = document.getElementById('bassmah-comment-text').value;
+
+    var params = new URLSearchParams({
+        action: 'bassmah_admin_ajax',
+        nonce: '<?php echo wp_create_nonce('bassmah_admin_nonce'); ?>',
+        action_type: 'update_report_status',
+        report_id: reportId,
+        status: action,
+        comment: comment
+    });
+
+    fetch(ajaxurl, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: params.toString()
+    })
+    .then(function(response) { return response.json(); })
+    .then(function(data) {
+        if (data.success) {
+            hideCommentModal();
+            window.location.reload();
+        } else {
+            alert(data.data || '<?php _e('Unable to update report.', 'bassmah-staff-reports'); ?>');
+        }
+    })
+    .catch(function() {
+        alert('<?php _e('Error updating report.', 'bassmah-staff-reports'); ?>');
+    });
+});
+
+window.onclick = function(event) {
+    var detailsModal = document.getElementById('bassmah-report-details-modal');
+    var commentModal = document.getElementById('bassmah-comment-modal');
+
+    if (event.target === detailsModal) {
+        hideReportDetails();
+    }
+    if (event.target === commentModal) {
+        hideCommentModal();
+    }
+};
 </script>
 
 <style>
+.bassmah-modal {
+    position: fixed;
+    z-index: 9999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.5);
+}
+
+.bassmah-modal-content {
+    background-color: #fff;
+    margin: 5% auto;
+    padding: 20px;
+    border-radius: 8px;
+    max-width: 800px;
+    position: relative;
+}
+
+.bassmah-large-modal .bassmah-modal-content {
+    max-width: 900px;
+}
+
+.bassmah-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.bassmah-modal-close {
+    background: transparent;
+    border: none;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.bassmah-modal-body {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.bassmah-loading {
+    padding: 20px;
+    text-align: center;
+}
+
+.bassmah-form-group {
+    margin-bottom: 15px;
+}
+
+.bassmah-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.bassmah-error {
+    color: #dc3545;
+    padding: 15px;
+}
+
+.tab-content {
+    margin-top: 20px;
+}
+
 .bassmah-filters {
     background: #f9f9f9;
     padding: 15px;

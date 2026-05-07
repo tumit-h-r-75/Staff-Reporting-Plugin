@@ -16,57 +16,93 @@ if (!in_array('administrator', $current_user->roles) && !in_array('bassmah_manag
     wp_die(__('You do not have sufficient permissions to access this page.', 'bassmah-staff-reports'));
 }
 
+global $wpdb;
+$salary_table = $wpdb->prefix . 'staff_salary_settings';
+
+function bassmah_ensure_salary_settings_table($wpdb, $salary_table) {
+    $table_exists = $wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $salary_table));
+    if ($table_exists === $salary_table) {
+        return true;
+    }
+
+    require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+    $charset_collate = $wpdb->get_charset_collate();
+    $sql = "CREATE TABLE $salary_table (
+        id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+        user_id BIGINT(20) UNSIGNED NOT NULL,
+        monthly_salary DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+        working_days_per_month INT(11) NOT NULL DEFAULT 22,
+        daily_rate DECIMAL(10,2) GENERATED ALWAYS AS (monthly_salary / working_days_per_month) STORED,
+        currency VARCHAR(3) NOT NULL DEFAULT 'CAD',
+        effective_from DATE NOT NULL,
+        created_by BIGINT(20) UNSIGNED NOT NULL,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        UNIQUE KEY unique_user_effective (user_id, effective_from),
+        KEY idx_user_id (user_id),
+        KEY idx_created_by (created_by)
+    ) $charset_collate";
+
+    return $wpdb->query($sql) !== false;
+}
+
+$salary_table_ready = bassmah_ensure_salary_settings_table($wpdb, $salary_table);
+if (!$salary_table_ready) {
+    echo '<div class="notice notice-error"><p>' . __('Salary settings database table is missing and could not be created automatically. Please run the plugin database setup or contact your administrator.', 'bassmah-staff-reports') . '</p></div>';
+}
+
 // Handle form submission
 if ($_POST && isset($_POST['save_salary_settings'])) {
     check_admin_referer('bassmah_save_salary_settings');
     
-    $user_id = intval($_POST['user_id']);
-    $monthly_salary = floatval($_POST['monthly_salary']);
-    $working_days = intval($_POST['working_days_per_month']);
-    $currency = sanitize_text_field($_POST['currency']);
-    $effective_from = sanitize_text_field($_POST['effective_from']);
-    
-    global $wpdb;
-    $table_name = $wpdb->prefix . 'staff_salary_settings';
-    
-    // Check if setting already exists for this user and date
-    $existing = $wpdb->get_row($wpdb->prepare(
-        "SELECT id FROM $table_name WHERE user_id = %d AND effective_from = %s",
-        $user_id, $effective_from
-    ));
-    
-    if ($existing) {
-        // Update existing
-        $wpdb->update(
-            $table_name,
-            array(
-                'monthly_salary' => $monthly_salary,
-                'working_days_per_month' => $working_days,
-                'currency' => $currency,
-                'updated_at' => current_time('mysql')
-            ),
-            array('id' => $existing->id),
-            array('%f', '%d', '%s', '%s'),
-            array('%d')
-        );
+    if (! $salary_table_ready) {
+        echo '<div class="notice notice-error"><p>' . __('Cannot save salary settings because the database table is not available.', 'bassmah-staff-reports') . '</p></div>';
     } else {
-        // Insert new
-        $wpdb->insert(
-            $table_name,
-            array(
-                'user_id' => $user_id,
-                'monthly_salary' => $monthly_salary,
-                'working_days_per_month' => $working_days,
-                'currency' => $currency,
-                'effective_from' => $effective_from,
-                'created_by' => $current_user->ID,
-                'created_at' => current_time('mysql')
-            ),
-            array('%d', '%f', '%d', '%s', '%s', '%d', '%s')
-        );
+        $user_id = intval($_POST['user_id']);
+        $monthly_salary = floatval($_POST['monthly_salary']);
+        $working_days = intval($_POST['working_days_per_month']);
+        $currency = sanitize_text_field($_POST['currency']);
+        $effective_from = sanitize_text_field($_POST['effective_from']);
+
+        // Check if setting already exists for this user and date
+        $existing = $wpdb->get_row($wpdb->prepare(
+            "SELECT id FROM $salary_table WHERE user_id = %d AND effective_from = %s",
+            $user_id, $effective_from
+        ));
+
+        if ($existing) {
+            // Update existing
+            $wpdb->update(
+                $salary_table,
+                array(
+                    'monthly_salary' => $monthly_salary,
+                    'working_days_per_month' => $working_days,
+                    'currency' => $currency,
+                    'updated_at' => current_time('mysql')
+                ),
+                array('id' => $existing->id),
+                array('%f', '%d', '%s', '%s'),
+                array('%d')
+            );
+        } else {
+            // Insert new
+            $wpdb->insert(
+                $salary_table,
+                array(
+                    'user_id' => $user_id,
+                    'monthly_salary' => $monthly_salary,
+                    'working_days_per_month' => $working_days,
+                    'currency' => $currency,
+                    'effective_from' => $effective_from,
+                    'created_by' => $current_user->ID,
+                    'updated_at' => current_time('mysql')
+                ),
+                array('%d', '%f', '%d', '%s', '%s', '%d', '%s')
+            );
+        }
+
+        echo '<div class="notice notice-success"><p>' . __('Salary settings saved successfully!', 'bassmah-staff-reports') . '</p></div>';
     }
-    
-    echo '<div class="notice notice-success"><p>' . __('Salary settings saved successfully!', 'bassmah-staff-reports') . '</p></div>';
 }
 
 // Get all users with staff roles
@@ -76,14 +112,16 @@ $staff_users = get_users(array(
 ));
 
 // Get existing salary settings
-global $wpdb;
-$salary_table = $wpdb->prefix . 'staff_salary_settings';
-$salary_settings = $wpdb->get_results(
-    "SELECT s.*, u.display_name, u.user_email 
-     FROM $salary_table s 
-     LEFT JOIN {$wpdb->users} u ON s.user_id = u.id 
-     ORDER BY u.display_name, s.effective_from DESC"
-);
+if ($salary_table_ready) {
+    $salary_settings = $wpdb->get_results(
+        "SELECT s.*, u.display_name, u.user_email 
+         FROM $salary_table s 
+         LEFT JOIN {$wpdb->users} u ON s.user_id = u.ID 
+         ORDER BY u.display_name, s.effective_from DESC"
+    );
+} else {
+    $salary_settings = array();
+}
 ?>
 
 <div class="wrap">

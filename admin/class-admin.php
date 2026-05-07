@@ -288,7 +288,7 @@ class Bassmah_Staff_Reports_Admin {
     public function handle_ajax_requests() {
         check_ajax_referer('bassmah_admin_nonce', 'nonce');
 
-        $action = $_POST['action_type'] ?? '';
+        $action = $_REQUEST['action_type'] ?? '';
 
         switch ($action) {
             case 'save_salary_settings':

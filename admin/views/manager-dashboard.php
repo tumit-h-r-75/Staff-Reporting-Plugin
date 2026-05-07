@@ -571,24 +571,26 @@ function viewReportDetails(reportId) {
     content.innerHTML = '<div class="bassmah-loading"><?php _e('Loading...', 'bassmah-staff-reports'); ?></div>';
     modal.style.display = 'block';
     
-    // Load report details via AJAX
+    const params = new URLSearchParams({
+        action: 'bassmah_admin_ajax',
+        nonce: '<?php echo wp_create_nonce('bassmah_admin_nonce'); ?>',
+        action_type: 'get_manager_report_details',
+        report_id: reportId
+    });
+
     fetch(ajaxurl, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: new URLSearchParams({
-            action: 'bassmah_get_manager_report_details',
-            nonce: '<?php echo wp_create_nonce('bassmah_manager_nonce'); ?>',
-            report_id: reportId
-        })
+        body: params.toString()
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
             content.innerHTML = data.data.html;
         } else {
-            content.innerHTML = '<div class="bassmah-error">' + data.data + '</div>';
+            content.innerHTML = '<div class="bassmah-error">' + (data.data || '<?php _e('Unable to load report details', 'bassmah-staff-reports'); ?>') + '</div>';
         }
     })
     .catch(error => {
@@ -626,16 +628,22 @@ function exportCurrentReports() {
     const form = document.querySelector('.bassmah-filter-form');
     const formData = new FormData(form);
     const params = new URLSearchParams(formData);
+    params.append('action', 'bassmah_admin_ajax');
+    params.append('nonce', '<?php echo wp_create_nonce('bassmah_admin_nonce'); ?>');
+    params.append('action_type', 'export_manager_reports');
     
-    window.open(ajaxurl + '?action=bassmah_export_manager_reports&' + params.toString());
+    window.open(ajaxurl + '?' + params.toString());
 }
 
 function exportSalarySummary() {
     const form = document.querySelector('.bassmah-filter-form');
     const formData = new FormData(form);
     const params = new URLSearchParams(formData);
+    params.append('action', 'bassmah_admin_ajax');
+    params.append('nonce', '<?php echo wp_create_nonce('bassmah_admin_nonce'); ?>');
+    params.append('action_type', 'export_salary_summary');
     
-    window.open(ajaxurl + '?action=bassmah_export_salary_summary&' + params.toString());
+    window.open(ajaxurl + '?' + params.toString());
 }
 
 function exportToExcel() {
@@ -657,8 +665,9 @@ document.getElementById('bassmah-comment-form').addEventListener('submit', funct
             'Content-Type': 'application/x-www-form-urlencoded',
         },
         body: new URLSearchParams({
-            action: 'bassmah_update_report_status',
-            nonce: '<?php echo wp_create_nonce('bassmah_manager_nonce'); ?>',
+            action: 'bassmah_admin_ajax',
+            nonce: '<?php echo wp_create_nonce('bassmah_admin_nonce'); ?>',
+            action_type: 'update_report_status',
             report_id: reportId,
             status: action,
             comment: comment
@@ -670,7 +679,7 @@ document.getElementById('bassmah-comment-form').addEventListener('submit', funct
             hideCommentModal();
             location.reload();
         } else {
-            alert(data.data);
+            alert(data.data || '<?php _e('Unable to update report', 'bassmah-staff-reports'); ?>');
         }
     })
     .catch(error => {
