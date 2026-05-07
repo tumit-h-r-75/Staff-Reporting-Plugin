@@ -102,6 +102,7 @@ class Bassmah_Staff_Reports_Public {
         add_shortcode('bassmah_report_form', array($this, 'render_report_form'));
         add_shortcode('bassmah_staff_dashboard', array($this, 'render_staff_dashboard'));
         add_shortcode('bassmah_my_reports', array($this, 'render_my_reports'));
+        add_shortcode('bassmah_role_dashboard', array($this, 'render_role_dashboard'));
     }
 
     /**
@@ -213,7 +214,30 @@ class Bassmah_Staff_Reports_Public {
      * @since    1.0.0
      */
     public function handle_ajax_requests() {
-        check_ajax_referer('bassmah_public_nonce', 'nonce');
+        // Fix: Add session and cookie validation
+        if (!headers_sent()) {
+            header('Access-Control-Allow-Origin: ' . get_site_url());
+            header('Access-Control-Allow-Methods: POST, GET');
+            header('Access-Control-Allow-Credentials: true');
+            header('Access-Control-Allow-Headers: Content-Type');
+        }
+        
+        // Enhanced nonce check with fallback
+        $nonce = $_REQUEST['nonce'] ?? '';
+        if (empty($nonce)) {
+            wp_send_json_error(__('Security check failed. Please refresh the page.', 'bassmah-staff-reports'));
+        }
+        
+        if (!wp_verify_nonce($nonce, 'bassmah_frontend_nonce')) {
+            // Log nonce failure for debugging
+            error_log('Bassmah Plugin: Nonce verification failed. Nonce: ' . $nonce . ' User: ' . get_current_user_id());
+            wp_send_json_error(__('Security check failed. Please refresh the page.', 'bassmah-staff-reports'));
+        }
+        
+        // Additional session validation
+        if (!is_user_logged_in()) {
+            wp_send_json_error(__('You must be logged in to perform this action.', 'bassmah-staff-reports'));
+        }
 
         $action = $_POST['action_type'] ?? '';
 
@@ -640,6 +664,19 @@ class Bassmah_Staff_Reports_Public {
         
         fclose($output);
         exit;
+    }
+
+    /**
+     * Render role-based dashboard shortcode
+     *
+     * @since    1.0.0
+     * @param    array    $atts    Shortcode attributes
+     * @return   string
+     */
+    public function render_role_dashboard($atts) {
+        ob_start();
+        include_once BASSMAH_STAFF_REPORTS_PLUGIN_DIR . 'public/views/role-dashboard.php';
+        return ob_get_clean();
     }
 
     /**

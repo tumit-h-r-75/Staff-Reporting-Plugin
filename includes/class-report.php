@@ -66,18 +66,29 @@ class Bassmah_Staff_Reports_Report {
             'updated_at' => current_time('mysql')
         );
 
+        // Debug: Log table name and data
+        error_log('Bassmah Plugin: Attempting to insert into table: ' . $this->table_name);
+        error_log('Bassmah Plugin: Report data: ' . print_r($report_data, true));
+        error_log('Bassmah Plugin: WPDB last error before insert: ' . $wpdb->last_error);
+        
         // Insert report
         $result = $wpdb->insert($this->table_name, $report_data, array('%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s'));
+
+        // Debug: Log result
+        error_log('Bassmah Plugin: Insert result: ' . ($result ? 'SUCCESS' : 'FAILED'));
+        error_log('Bassmah Plugin: WPDB last error after insert: ' . $wpdb->last_error);
+        error_log('Bassmah Plugin: WPDB insert ID: ' . $wpdb->insert_id);
 
         if ($result === false) {
             return new WP_Error(
                 'db_error',
-                __('Failed to save report to database.', 'bassmah-staff-reports'),
+                __('Failed to save report to database. Error: ', 'bassmah-staff-reports') . $wpdb->last_error,
                 array('status' => 500)
             );
         }
 
         $report_id = $wpdb->insert_id;
+        error_log('Bassmah Plugin: Report inserted with ID: ' . $report_id);
 
         // Trigger notification
         $this->trigger_notification('report_submitted', $report_id);
@@ -407,6 +418,34 @@ class Bassmah_Staff_Reports_Report {
 
             wp_mail($manager->user_email, $subject, $message);
         }
+    }
+
+    /**
+     * Get count of reports for pagination
+     *
+     * @param array $args
+     * @return int
+     */
+    public function get_my_reports_count($args = array()) {
+        global $wpdb;
+        
+        $where = "WHERE 1=1";
+        if (!empty($args['user_id'])) {
+            $where .= $wpdb->prepare(" AND user_id = %d", $args['user_id']);
+        }
+        if (!empty($args['date_from'])) {
+            $where .= $wpdb->prepare(" AND report_date >= %s", $args['date_from']);
+        }
+        if (!empty($args['date_to'])) {
+            $where .= $wpdb->prepare(" AND report_date <= %s", $args['date_to']);
+        }
+        if (!empty($args['status'])) {
+            $where .= $wpdb->prepare(" AND status = %s", $args['status']);
+        }
+        
+        $count = $wpdb->get_var("SELECT COUNT(*) FROM {$this->table_name} $where");
+        
+        return intval($count);
     }
 
     /**

@@ -290,9 +290,9 @@ function editWorkingDay(id) {
         });
 }
 
-function deleteWorkingDay(id) {
+function deleteWorkingDay($id) {
     if (confirm('<?php _e('Are you sure you want to delete this working day?', 'bassmah-staff-reports'); ?>')) {
-        window.location.href = '<?php echo admin_url('admin-ajax.php'); ?>?action=delete_working_day&id=' + id + '&_wpnonce=<?php echo wp_create_nonce('delete_working_day_' . id); ?>';
+        window.location.href = '<?php echo admin_url('admin-ajax.php'); ?>?action=delete_working_day&id=' + $id + '&_wpnonce=<?php echo wp_create_nonce('delete_working_day_' . $id); ?>';
     }
 }
 

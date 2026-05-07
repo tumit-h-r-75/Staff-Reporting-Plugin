@@ -249,10 +249,10 @@ $users = get_users(array(
 </div>
 
 <script>
-function addComment(reportId) {
+function addComment($reportId) {
     var comment = prompt('<?php _e('Enter your comment:', 'bassmah-staff-reports'); ?>');
     if (comment) {
-        window.location.href = '<?php echo admin_url('admin-ajax.php'); ?>?action=add_comment&report_id=' + reportId + '&comment=' + encodeURIComponent(comment) + '&_wpnonce=<?php echo wp_create_nonce('add_comment_' . reportId); ?>';
+        window.location.href = '<?php echo admin_url('admin-ajax.php'); ?>?action=add_comment&report_id=' + $reportId + '&comment=' + encodeURIComponent(comment) + '&_wpnonce=<?php echo wp_create_nonce('add_comment_' . $reportId); ?>';
     }
 }
 </script>

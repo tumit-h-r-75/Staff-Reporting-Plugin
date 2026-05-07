@@ -10,6 +10,10 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+// Include required classes
+require_once BASSMAH_STAFF_REPORTS_PLUGIN_DIR . 'includes/class-report.php';
+require_once BASSMAH_STAFF_REPORTS_PLUGIN_DIR . 'includes/class-salary-calculator.php';
+
 $current_user = wp_get_current_user();
 $report_class = new Bassmah_Staff_Reports_Report();
 $salary_calculator = new Bassmah_Staff_Reports_Salary_Calculator();

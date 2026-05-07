@@ -81,10 +81,31 @@ class Bassmah_Staff_Reports_Activator {
         // Include WordPress database upgrade functions
         require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
         
+        // Debug: Log table creation attempts
+        error_log('Bassmah Plugin: Creating tables with prefix: ' . $wpdb->prefix);
+        error_log('Bassmah Plugin: Reports table name: ' . $wpdb->prefix . 'staff_reports');
+        error_log('Bassmah Plugin: Salary table name: ' . $table_salary_settings);
+        error_log('Bassmah Plugin: Working days table name: ' . $table_working_days);
+        
         // Create tables
-        dbDelta($sql_reports);
-        dbDelta($sql_salary);
-        dbDelta($sql_working_days);
+        $result_reports = dbDelta($sql_reports);
+        $result_salary = dbDelta($sql_salary);
+        $result_working_days = dbDelta($sql_working_days);
+        
+        // Debug: Log results
+        error_log('Bassmah Plugin: dbDelta reports result: ' . print_r($result_reports, true));
+        error_log('Bassmah Plugin: dbDelta salary result: ' . print_r($result_salary, true));
+        error_log('Bassmah Plugin: dbDelta working days result: ' . print_r($result_working_days, true));
+        
+        // Verify tables exist
+        $tables_exist = $wpdb->get_var("SHOW TABLES LIKE '" . $wpdb->prefix . "staff_reports'");
+        error_log('Bassmah Plugin: staff_reports table exists: ' . ($tables_exist ? 'YES' : 'NO'));
+        
+        $tables_exist = $wpdb->get_var("SHOW TABLES LIKE '" . $wpdb->prefix . "staff_salary_settings'");
+        error_log('Bassmah Plugin: staff_salary_settings table exists: ' . ($tables_exist ? 'YES' : 'NO'));
+        
+        $tables_exist = $wpdb->get_var("SHOW TABLES LIKE '" . $wpdb->prefix . "staff_working_days'");
+        error_log('Bassmah Plugin: staff_working_days table exists: ' . ($tables_exist ? 'YES' : 'NO'));
         
         // Create custom user roles
         self::create_user_roles();
