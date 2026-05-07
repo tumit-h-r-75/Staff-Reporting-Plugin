@@ -116,10 +116,9 @@ foreach ($staff_users as $staff) {
                                 </td>
                                 <td><?php echo $task_count; ?></td>
                                 <td>
-                                    <a href="<?php echo admin_url('admin.php?page=bassmah-all-reports&view=report&id=' . $report->id); ?>" 
-                                       class="button button-small">
+                                    <button type="button" class="button button-small" onclick="viewReportDetails(<?php echo $report->id; ?>)">
                                         <?php _e('View', 'bassmah-staff-reports'); ?>
-                                    </a>
+                                    </button>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -175,6 +174,115 @@ foreach ($staff_users as $staff) {
         </div>
     </div>
 </div>
+
+<!-- Report Details Modal -->
+<div id="bassmah-report-details-modal" class="bassmah-modal" style="display:none;">
+    <div class="bassmah-modal-content bassmah-large-modal">
+        <div class="bassmah-modal-header">
+            <h3><?php _e('Report Details', 'bassmah-staff-reports'); ?></h3>
+            <button class="bassmah-modal-close" type="button" onclick="hideReportDetails()">&times;</button>
+        </div>
+        <div class="bassmah-modal-body" id="bassmah-report-details-content">
+            <div class="bassmah-loading"><?php _e('Loading...', 'bassmah-staff-reports'); ?></div>
+        </div>
+    </div>
+</div>
+
+<script>
+function viewReportDetails(reportId) {
+    var modal = document.getElementById('bassmah-report-details-modal');
+    var content = document.getElementById('bassmah-report-details-content');
+    content.innerHTML = '<div class="bassmah-loading"><?php _e('Loading...', 'bassmah-staff-reports'); ?></div>';
+    modal.style.display = 'block';
+
+    var params = new URLSearchParams({
+        action: 'bassmah_admin_ajax',
+        nonce: '<?php echo wp_create_nonce('bassmah_admin_nonce'); ?>',
+        action_type: 'get_manager_report_details',
+        report_id: reportId
+    });
+
+    fetch(ajaxurl, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: params.toString()
+    })
+    .then(function(response) { return response.json(); })
+    .then(function(data) {
+        if (data.success) {
+            content.innerHTML = data.data.html;
+        } else {
+            content.innerHTML = '<div class="bassmah-error">' + (data.data || '<?php _e('Unable to load report details.', 'bassmah-staff-reports'); ?>') + '</div>';
+        }
+    })
+    .catch(function() {
+        content.innerHTML = '<div class="bassmah-error"><?php _e('Error loading report details.', 'bassmah-staff-reports'); ?></div>';
+    });
+}
+
+function hideReportDetails() {
+    document.getElementById('bassmah-report-details-modal').style.display = 'none';
+}
+</script>
+
+<style>
+.bassmah-modal {
+    position: fixed;
+    z-index: 9999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.5);
+}
+
+.bassmah-modal-content {
+    background-color: #fff;
+    margin: 5% auto;
+    padding: 20px;
+    border-radius: 8px;
+    max-width: 800px;
+    position: relative;
+}
+
+.bassmah-large-modal .bassmah-modal-content {
+    max-width: 900px;
+}
+
+.bassmah-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.bassmah-modal-close {
+    background: transparent;
+    border: none;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.bassmah-modal-body {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.bassmah-loading {
+    padding: 20px;
+    text-align: center;
+}
+
+.bassmah-error {
+    color: #dc3545;
+    padding: 15px;
+}
+
+</style>
 
 <style>
 .bassmah-dashboard-sections {

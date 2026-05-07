@@ -166,10 +166,16 @@ class Bassmah_Staff_Reports_Report {
     public function get_report($report_id) {
         global $wpdb;
 
-        return $wpdb->get_row($wpdb->prepare(
+        $report = $wpdb->get_row($wpdb->prepare(
             "SELECT * FROM {$this->table_name} WHERE id = %d",
             $report_id
         ));
+
+        if ($report) {
+            $report->tasks = json_decode($report->tasks_json, true);
+        }
+
+        return $report;
     }
 
     /**
@@ -182,11 +188,17 @@ class Bassmah_Staff_Reports_Report {
     public function get_report_by_date($user_id, $date) {
         global $wpdb;
 
-        return $wpdb->get_row($wpdb->prepare(
+        $report = $wpdb->get_row($wpdb->prepare(
             "SELECT * FROM {$this->table_name} WHERE user_id = %d AND report_date = %s",
             $user_id,
             $date
         ));
+
+        if ($report) {
+            $report->tasks = json_decode($report->tasks_json, true);
+        }
+
+        return $report;
     }
 
     /**
@@ -306,6 +318,62 @@ class Bassmah_Staff_Reports_Report {
         }
 
         return $this->update_report($report_id, array('manager_comment' => $comment));
+    }
+
+    /**
+     * Update report status and manager comment
+     *
+     * @param int $report_id
+     * @param string $action
+     * @param string $comment
+     * @return bool|WP_Error
+     */
+    public function update_report_status($report_id, $action, $comment = '') {
+        if (!Bassmah_Staff_Reports_Roles::can_comment_reports()) {
+            return new WP_Error(
+                'permission_denied',
+                __('You do not have permission to update report status.', 'bassmah-staff-reports'),
+                array('status' => 403)
+            );
+        }
+
+        $report = $this->get_report($report_id);
+        if (!$report) {
+            return new WP_Error(
+                'report_not_found',
+                __('Report not found.', 'bassmah-staff-reports'),
+                array('status' => 404)
+            );
+        }
+
+        $status_map = array(
+            'approve' => 'approved',
+            'reject' => 'rejected'
+        );
+
+        if (!isset($status_map[$action])) {
+            return new WP_Error(
+                'invalid_action',
+                __('Invalid report action.', 'bassmah-staff-reports'),
+                array('status' => 400)
+            );
+        }
+
+        $update_data = array(
+            'status' => $status_map[$action],
+            'manager_comment' => $comment
+        );
+
+        $result = $this->update_report($report_id, $update_data);
+        if (is_wp_error($result)) {
+            return $result;
+        }
+
+        if (!empty($comment)) {
+            $this->trigger_notification('manager_comment', $report);
+        }
+
+        return true;
     }
 
     /**

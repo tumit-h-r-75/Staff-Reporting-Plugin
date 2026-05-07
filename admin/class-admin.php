@@ -399,7 +399,7 @@ class Bassmah_Staff_Reports_Admin {
         }
 
         $user = get_userdata($report->user_id);
-        $tasks = is_array($report->tasks) ? $report->tasks : json_decode($report->tasks, true);
+        $tasks = is_array($report->tasks) ? $report->tasks : json_decode($report->tasks_json, true);
         
         ob_start();
         ?>
