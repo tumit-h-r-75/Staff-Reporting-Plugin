@@ -23,6 +23,9 @@ if (!defined('WPINC')) {
 if (!defined('BASSMAH_STAFF_REPORTS_VERSION')) {
     define('BASSMAH_STAFF_REPORTS_VERSION', '1.0.1');
 }
+if (!defined('BASSMAH_STAFF_REPORTS_PLUGIN_NAME')) {
+    define('BASSMAH_STAFF_REPORTS_PLUGIN_NAME', 'Bassmah Staff Reports');
+}
 if (!defined('BASSMAH_STAFF_REPORTS_PLUGIN_DIR')) {
     define('BASSMAH_STAFF_REPORTS_PLUGIN_DIR', plugin_dir_path(__FILE__));
 }

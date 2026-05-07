@@ -45,15 +45,12 @@ class Bassmah_Staff_Reports_Public {
      */
     public function enqueue_styles() {
         wp_enqueue_style(
-            $this->plugin_name,
-            plugin_dir_url(__FILE__) . 'css/public-style.css',
+            BASSMAH_STAFF_REPORTS_PLUGIN_NAME,
+            plugin_dir_url(__FILE__) . 'css/bassmah-staff-reports-public.css',
             array(),
-            $this->version,
+            BASSMAH_STAFF_REPORTS_VERSION,
             'all'
         );
-
-        // Add date picker CSS
-        wp_enqueue_style('jquery-ui-datepicker');
     }
 
     /**
@@ -62,30 +59,58 @@ class Bassmah_Staff_Reports_Public {
      * @since    1.0.0
      */
     public function enqueue_scripts() {
-        wp_enqueue_script(
-            $this->plugin_name,
-            plugin_dir_url(__FILE__) . 'js/public-scripts.js',
-            array('jquery', 'jquery-ui-datepicker'),
-            $this->version,
-            false
-        );
-
-        // Localize script
-        wp_localize_script($this->plugin_name, 'bassmah_public', array(
-            'ajax_url' => admin_url('admin-ajax.php'),
-            'nonce' => wp_create_nonce('bassmah_public_nonce'),
-            'rest_url' => rest_url('bassmah/v1/'),
-            'strings' => array(
-                'confirm_submit' => __('Are you sure you want to submit this report?', 'bassmah-staff-reports'),
-                'task_required' => __('Task description is required.', 'bassmah-staff-reports'),
-                'loading' => __('Loading...', 'bassmah-staff-reports'),
-                'report_submitted' => __('Report submitted successfully!', 'bassmah-staff-reports'),
-                'error_occurred' => __('An error occurred. Please try again.', 'bassmah-staff-reports')
-            )
-        ));
+        // Enqueue jQuery
+        wp_enqueue_script('jquery');
         
-        // Add AJAX handlers
-        add_action('wp_ajax_bassmah_get_report_details', array($this, 'handle_ajax_requests'));
+        // Enqueue JWT authentication script
+        wp_enqueue_script(
+            'bassmah-jwt-auth',
+            plugin_dir_url(__FILE__) . 'js/jwt-auth.js',
+            array('jquery'),
+            BASSMAH_STAFF_REPORTS_VERSION,
+            true
+        );
+        
+        // Enqueue main public script
+        wp_enqueue_script(
+            BASSMAH_STAFF_REPORTS_PLUGIN_NAME,
+            plugin_dir_url(__FILE__) . 'js/bassmah-staff-reports-public.js',
+            array('jquery', 'bassmah-jwt-auth'),
+            BASSMAH_STAFF_REPORTS_VERSION,
+            true
+        );
+        
+        // Localize script with JWT support
+        wp_localize_script(
+            BASSMAH_STAFF_REPORTS_PLUGIN_NAME,
+            'bassmahAjax',
+            array(
+                'ajaxurl' => admin_url('admin-ajax.php'),
+                'strings' => array(
+                    'confirm_delete' => __('Are you sure you want to delete this?', 'bassmah-staff-reports'),
+                    'loading' => __('Loading...', 'bassmah-staff-reports'),
+                    'error' => __('An error occurred. Please try again.', 'bassmah-staff-reports'),
+                    'success' => __('Success!', 'bassmah-staff-reports'),
+                    'auth_required' => __('Authentication required. Please log in.', 'bassmah-staff-reports'),
+                    'token_expired' => __('Session expired. Please refresh the page.', 'bassmah-staff-reports')
+                )
+            )
+        );
+        
+        // Localize JWT auth script
+        wp_localize_script(
+            'bassmah-jwt-auth',
+            'bassmahAuth',
+            array(
+                'ajaxurl' => admin_url('admin-ajax.php'),
+                'is_logged_in' => is_user_logged_in(),
+                'user_id' => get_current_user_id(),
+                'strings' => array(
+                    'token_error' => __('Authentication error. Please refresh the page.', 'bassmah-staff-reports'),
+                    'network_error' => __('Network error. Please check your connection.', 'bassmah-staff-reports')
+                )
+            )
+        );
         add_action('wp_ajax_nopriv_bassmah_get_report_details', array($this, 'handle_ajax_requests'));
         add_action('wp_ajax_bassmah_export_reports', array($this, 'handle_ajax_requests'));
         add_action('wp_ajax_nopriv_bassmah_export_reports', array($this, 'handle_ajax_requests'));
@@ -214,29 +239,33 @@ class Bassmah_Staff_Reports_Public {
      * @since    1.0.0
      */
     public function handle_ajax_requests() {
-        // Fix: Add session and cookie validation
+        // Fix: Add CORS headers for JWT
         if (!headers_sent()) {
             header('Access-Control-Allow-Origin: ' . get_site_url());
-            header('Access-Control-Allow-Methods: POST, GET');
-            header('Access-Control-Allow-Credentials: true');
-            header('Access-Control-Allow-Headers: Content-Type');
+            header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
+            header('Access-Control-Allow-Headers: Content-Type, Authorization');
+            header('Access-Control-Allow-Credentials: false'); // JWT doesn't need cookies
         }
         
-        // Enhanced nonce check with fallback
-        $nonce = $_REQUEST['nonce'] ?? '';
-        if (empty($nonce)) {
-            wp_send_json_error(__('Security check failed. Please refresh the page.', 'bassmah-staff-reports'));
+        // Handle preflight OPTIONS request
+        if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+            status_header(200);
+            exit;
         }
         
-        if (!wp_verify_nonce($nonce, 'bassmah_frontend_nonce')) {
-            // Log nonce failure for debugging
-            error_log('Bassmah Plugin: Nonce verification failed. Nonce: ' . $nonce . ' User: ' . get_current_user_id());
-            wp_send_json_error(__('Security check failed. Please refresh the page.', 'bassmah-staff-reports'));
+        // Initialize JWT authentication
+        $jwt_auth = new Bassmah_Staff_Reports_JWT_Auth();
+        
+        // Validate JWT token instead of nonce
+        $token_validation = $jwt_auth->validate_jwt_middleware();
+        
+        if (is_wp_error($token_validation)) {
+            wp_send_json_error($token_validation->get_error_message(), 401);
         }
         
-        // Additional session validation
-        if (!is_user_logged_in()) {
-            wp_send_json_error(__('You must be logged in to perform this action.', 'bassmah-staff-reports'));
+        // Set current user from token
+        if (isset($token_validation['data']['user_id'])) {
+            wp_set_current_user($token_validation['data']['user_id']);
         }
 
         $action = $_POST['action_type'] ?? '';

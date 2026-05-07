@@ -89,6 +89,7 @@ if (!class_exists('Bassmah_Staff_Reports')) {
         require_once BASSMAH_STAFF_REPORTS_PLUGIN_DIR . 'includes/class-report.php';
         require_once BASSMAH_STAFF_REPORTS_PLUGIN_DIR . 'includes/class-salary.php';
         require_once BASSMAH_STAFF_REPORTS_PLUGIN_DIR . 'includes/class-salary-calculator.php';
+        require_once BASSMAH_STAFF_REPORTS_PLUGIN_DIR . 'includes/class-jwt-auth.php';
         require_once BASSMAH_STAFF_REPORTS_PLUGIN_DIR . 'admin/class-admin.php';
         require_once BASSMAH_STAFF_REPORTS_PLUGIN_DIR . 'public/class-public.php';
         require_once BASSMAH_STAFF_REPORTS_PLUGIN_DIR . 'api/class-rest-reports.php';
