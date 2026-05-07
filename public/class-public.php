@@ -88,7 +88,7 @@ class Bassmah_Staff_Reports_Public {
             'bassmah_public',
             array(
                 'ajaxurl' => admin_url('admin-ajax.php'),
-                'rest_url' => rest_url('bassmah/v1/'),
+                'rest_url' => rest_url('bassmah-staff-reports/v1/'),
                 'nonce' => wp_create_nonce('wp_rest'),
                 'strings' => array(
                     'confirm_delete' => __('Are you sure you want to delete this?', 'bassmah-staff-reports'),

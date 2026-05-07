@@ -93,6 +93,7 @@ if (!class_exists('Bassmah_Staff_Reports')) {
         require_once BASSMAH_STAFF_REPORTS_PLUGIN_DIR . 'admin/class-admin.php';
         require_once BASSMAH_STAFF_REPORTS_PLUGIN_DIR . 'public/class-public.php';
         require_once BASSMAH_STAFF_REPORTS_PLUGIN_DIR . 'api/class-rest-reports.php';
+        require_once BASSMAH_STAFF_REPORTS_PLUGIN_DIR . 'api/class-rest-report-approvals.php';
         require_once BASSMAH_STAFF_REPORTS_PLUGIN_DIR . 'api/class-rest-salary.php';
 
         $this->loader = new Bassmah_Staff_Reports_Loader();
@@ -154,6 +155,9 @@ if (!class_exists('Bassmah_Staff_Reports')) {
     private function define_api_hooks() {
         $rest_reports = new Bassmah_Staff_Reports_REST_Reports();
         $this->loader->add_action( 'rest_api_init', $rest_reports, 'register_routes' );
+
+        $rest_approvals = new Bassmah_Staff_Reports_REST_Approvals();
+        $this->loader->add_action( 'rest_api_init', $rest_approvals, 'register_routes' );
 
         $rest_salary = new Bassmah_Staff_Reports_REST_Salary();
         $this->loader->add_action( 'rest_api_init', $rest_salary, 'register_routes' );

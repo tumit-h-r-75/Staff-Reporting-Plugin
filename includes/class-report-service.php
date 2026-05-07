@@ -640,4 +640,214 @@ class Bassmah_Staff_Reports_Report_Service {
             'order' => 'DESC'
         ));
     }
+
+    /**
+     * Approve a submitted report
+     *
+     * @since    1.0.0
+     * @param    int     $report_id   Report ID
+     * @param    int     $manager_id  Manager user ID
+     * @param    string  $comment     Approval comment (optional)
+     * @return   int|WP_Error
+     */
+    public function approve_report($report_id, $manager_id, $comment = '') {
+        // Get the report
+        $report = $this->get_report($report_id, false);
+        if (is_wp_error($report)) {
+            return $report;
+        }
+
+        // Check if report can be approved
+        if ($report->status !== 'submitted') {
+            return new WP_Error(
+                'invalid_status',
+                __('Only submitted reports can be approved.', 'bassmah-staff-reports'),
+                array('status' => 400)
+            );
+        }
+
+        // Prepare update data
+        $update_data = array(
+            'status' => 'approved',
+            'manager_id' => $manager_id,
+            'manager_comment' => !empty($comment) ? sanitize_textarea_field($comment) : null,
+            'updated_at' => current_time('mysql')
+        );
+
+        // Update in database
+        $this->database->start_transaction();
+        
+        try {
+            $result = $this->database->update(
+                'reports',
+                $update_data,
+                array('id' => $report_id)
+            );
+
+            if ($result === false) {
+                $this->database->rollback();
+                return new WP_Error(
+                    'database_error',
+                    __('Failed to approve report.', 'bassmah-staff-reports'),
+                    array('status' => 500)
+                );
+            }
+
+            // Clear cache
+            $this->cache->delete("report_{$report_id}", 'reports');
+            $this->cache->delete("user_reports_{$report->user_id}", 'reports');
+            $this->cache->delete('pending_reports', 'reports');
+
+            $this->database->commit();
+
+            // Trigger action for approval
+            do_action('bassmah_report_approved', $report_id, $manager_id, $update_data);
+
+            return $report_id;
+
+        } catch (Exception $e) {
+            $this->database->rollback();
+            return new WP_Error(
+                'exception',
+                $e->getMessage(),
+                array('status' => 500)
+            );
+        }
+    }
+
+    /**
+     * Reject a submitted report
+     *
+     * @since    1.0.0
+     * @param    int     $report_id   Report ID
+     * @param    int     $manager_id  Manager user ID
+     * @param    string  $reason      Rejection reason (required)
+     * @return   int|WP_Error
+     */
+    public function reject_report($report_id, $manager_id, $reason = '') {
+        // Get the report
+        $report = $this->get_report($report_id, false);
+        if (is_wp_error($report)) {
+            return $report;
+        }
+
+        // Check if report can be rejected
+        if ($report->status !== 'submitted') {
+            return new WP_Error(
+                'invalid_status',
+                __('Only submitted reports can be rejected.', 'bassmah-staff-reports'),
+                array('status' => 400)
+            );
+        }
+
+        // Validate reason
+        if (empty($reason)) {
+            return new WP_Error(
+                'missing_reason',
+                __('Rejection reason is required.', 'bassmah-staff-reports'),
+                array('status' => 400)
+            );
+        }
+
+        // Prepare update data
+        $update_data = array(
+            'status' => 'rejected',
+            'manager_id' => $manager_id,
+            'manager_comment' => sanitize_textarea_field($reason),
+            'updated_at' => current_time('mysql')
+        );
+
+        // Update in database
+        $this->database->start_transaction();
+        
+        try {
+            $result = $this->database->update(
+                'reports',
+                $update_data,
+                array('id' => $report_id)
+            );
+
+            if ($result === false) {
+                $this->database->rollback();
+                return new WP_Error(
+                    'database_error',
+                    __('Failed to reject report.', 'bassmah-staff-reports'),
+                    array('status' => 500)
+                );
+            }
+
+            // Clear cache
+            $this->cache->delete("report_{$report_id}", 'reports');
+            $this->cache->delete("user_reports_{$report->user_id}", 'reports');
+            $this->cache->delete('pending_reports', 'reports');
+
+            $this->database->commit();
+
+            // Trigger action for rejection
+            do_action('bassmah_report_rejected', $report_id, $manager_id, $update_data);
+
+            return $report_id;
+
+        } catch (Exception $e) {
+            $this->database->rollback();
+            return new WP_Error(
+                'exception',
+                $e->getMessage(),
+                array('status' => 500)
+            );
+        }
+    }
+
+    /**
+     * Get pending reports (submitted, awaiting approval)
+     *
+     * @since    1.0.0
+     * @param    int    $limit   Number of reports
+     * @param    int    $offset  Offset for pagination
+     * @return   array
+     */
+    public function get_pending_reports($limit = 20, $offset = 0) {
+        $cache_key = "pending_reports_{$limit}_{$offset}";
+        $cached = $this->cache->get($cache_key, 'reports');
+        
+        if ($cached !== null) {
+            return $cached;
+        }
+
+        $reports = $this->get_reports(array(
+            'status' => 'submitted',
+            'limit' => $limit,
+            'offset' => $offset,
+            'orderby' => 'submission_time',
+            'order' => 'ASC'
+        ));
+
+        $this->cache->set($cache_key, $reports, 'reports', 600);
+
+        return $reports;
+    }
+
+    /**
+     * Get count of pending reports
+     *
+     * @since    1.0.0
+     * @return   int
+     */
+    public function get_pending_report_count() {
+        $cache_key = 'pending_report_count';
+        $cached = $this->cache->get($cache_key, 'reports');
+        
+        if ($cached !== null) {
+            return $cached;
+        }
+
+        $count = $this->database->get_var(
+            "SELECT COUNT(*) FROM {$this->database->get_table_name('reports')} WHERE status = %s",
+            array('submitted')
+        );
+
+        $this->cache->set($cache_key, $count, 'reports', 600);
+
+        return intval($count);
+    }
 }

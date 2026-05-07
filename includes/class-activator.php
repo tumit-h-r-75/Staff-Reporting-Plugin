@@ -162,6 +162,7 @@ class Bassmah_Staff_Reports_Activator {
             'bassmah_view_own_reports' => true,
             'bassmah_comment_reports' => true,
             'bassmah_export_reports' => true,
+            'bassmah_manage_approvals' => true,
             'bassmah_view_all_salary' => true,
             'bassmah_view_own_salary' => true,
             'bassmah_manage_salary_settings' => true,
@@ -177,6 +178,7 @@ class Bassmah_Staff_Reports_Activator {
             $admin->add_cap('bassmah_view_own_reports');
             $admin->add_cap('bassmah_comment_reports');
             $admin->add_cap('bassmah_export_reports');
+            $admin->add_cap('bassmah_manage_approvals');
             $admin->add_cap('bassmah_view_all_salary');
             $admin->add_cap('bassmah_view_own_salary');
             $admin->add_cap('bassmah_manage_salary_settings');

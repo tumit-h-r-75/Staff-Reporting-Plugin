@@ -149,6 +149,18 @@ class Bassmah_Staff_Reports_Admin {
             array($this, 'display_staff_management_page')
         );
 
+        // Pending Reports (Approvals) submenu - only show to managers
+        if (Bassmah_Staff_Reports_Roles::can_manage_approvals()) {
+            add_submenu_page(
+                'bassmah-reports',
+                __('Pending Approvals', 'bassmah-staff-reports'),
+                __('Pending Approvals', 'bassmah-staff-reports') . ' <span class="update-plugins" id="pending-reports-badge"></span>',
+                'bassmah_manage_approvals',
+                'bassmah-pending-reports',
+                array($this, 'display_pending_reports_page')
+            );
+        }
+
         // Settings submenu
         add_submenu_page(
             'bassmah-reports',
@@ -294,9 +306,6 @@ class Bassmah_Staff_Reports_Admin {
             case 'save_salary_settings':
                 $this->save_salary_settings();
                 break;
-            case 'export_reports':
-                $this->export_reports();
-                break;
             case 'get_manager_report_details':
                 $this->get_manager_report_details();
                 break;
@@ -308,6 +317,9 @@ class Bassmah_Staff_Reports_Admin {
                 break;
             case 'export_salary_summary':
                 $this->export_salary_summary();
+                break;
+            case 'export_reports':
+                $this->export_reports();
                 break;
             default:
                 wp_send_json_error(__('Invalid action', 'bassmah-staff-reports'));
@@ -702,5 +714,18 @@ class Bassmah_Staff_Reports_Admin {
         
         fclose($output);
         exit;
+    }
+
+    /**
+     * Display pending reports (approvals) page
+     *
+     * @since    1.0.0
+     */
+    public function display_pending_reports_page() {
+        if (!Bassmah_Staff_Reports_Roles::can_manage_approvals()) {
+            wp_die(__('You do not have sufficient permissions to access this page.', 'bassmah-staff-reports'));
+        }
+
+        require_once plugin_dir_path(__FILE__) . 'views/report-approvals.php';
     }
 }

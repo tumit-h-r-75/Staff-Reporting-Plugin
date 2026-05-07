@@ -36,11 +36,10 @@ jQuery(document).ready(function($) {
         $.ajax({
             url: bassmah_public.rest_url + 'reports',
             type: 'POST',
-            contentType: 'application/json; charset=utf-8',
-            data: JSON.stringify({
+            data: {
                 tasks: tasks,
                 status: 'submitted'
-            }),
+            },
             beforeSend: function(xhr) {
                 xhr.setRequestHeader('X-WP-Nonce', bassmah_public.nonce);
             },

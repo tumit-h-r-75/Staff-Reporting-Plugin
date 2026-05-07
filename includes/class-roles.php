@@ -212,4 +212,24 @@ class Bassmah_Staff_Reports_Roles {
         }
         return true;
     }
+
+    /**
+     * Check if current user can manage report approvals
+     *
+     * @return bool
+     */
+    public static function can_manage_approvals() {
+        return current_user_can('bassmah_manage_approvals') || 
+               current_user_can('manage_options') ||
+               self::is_manager();
+    }
+
+    /**
+     * Check if current user can approve/reject reports
+     *
+     * @return bool
+     */
+    public static function can_approve_reports() {
+        return self::can_manage_approvals();
+    }
 }
