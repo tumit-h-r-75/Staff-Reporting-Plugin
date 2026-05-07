@@ -1,9 +1,9 @@
 <?php
 /**
- * Plugin Name:       Bassmah Staff Reports Pro
+ * Plugin Name:       Bassmah Staff Reports
  * Plugin URI:        https://bassmah.ca
  * Description:       Staff Daily Work Reporting System for Bassmah - Allows staff to submit daily work reports and managers to monitor them with salary deduction integration.
- * Version:           1.0.0
+ * Version:           1.0.1
  * Author:            Tumit
  * Author URI:        https://bassmah.ca
  * License:           GPL v2 or later
@@ -20,7 +20,7 @@ if (!defined('WPINC')) {
 }
 
 // Define plugin constants
-define('BASSMAH_STAFF_REPORTS_VERSION', '1.0.0');
+define('BASSMAH_STAFF_REPORTS_VERSION', '1.0.1');
 define('BASSMAH_STAFF_REPORTS_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('BASSMAH_STAFF_REPORTS_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('BASSMAH_STAFF_REPORTS_PLUGIN_BASENAME', plugin_basename(__FILE__));

@@ -144,16 +144,22 @@ class Bassmah_Staff_Reports_REST_Reports {
         ));
 
         register_rest_route('bassmah/v1', '/reports/(?P<id>\d+)/comment', array(
-            array(
-                'methods' => WP_REST_Server::EDITABLE,
-                'callback' => array($this, 'add_comment'),
-                'permission_callback' => array($this, 'add_comment_permissions_check'),
-                'args' => array(
-                    'comment' => array(
-                        'required' => true,
-                        'type' => 'string',
-                        'description' => __('Manager comment', 'bassmah-staff-reports'),
-                    ),
+            'methods' => WP_REST_Server::EDITABLE,
+            'callback' => array($this, 'add_comment'),
+            'permission_callback' => array($this, 'add_comment_permissions_check'),
+            'args' => array(
+                'id' => array(
+                    'required' => true,
+                    'type' => 'integer',
+                    'description' => __('Report ID', 'bassmah-staff-reports'),
+                ),
+                'comment' => array(
+                    'required' => true,
+                    'type' => 'string',
+                    'minLength' => 1,
+                    'maxLength' => 1000,
+                    'description' => __('Manager comment', 'bassmah-staff-reports'),
+                    'sanitize_callback' => 'sanitize_textarea_field'
                 ),
             ),
         ));

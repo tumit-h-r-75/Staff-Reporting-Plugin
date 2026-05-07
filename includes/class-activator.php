@@ -62,8 +62,8 @@ class Bassmah_Staff_Reports_Activator {
             PRIMARY KEY (id),
             UNIQUE KEY unique_user_effective (user_id, effective_from),
             KEY idx_user_id (user_id),
-            FOREIGN KEY (user_id) REFERENCES {$wpdb->prefix}users(id) ON DELETE CASCADE,
-            FOREIGN KEY (created_by) REFERENCES {$wpdb->prefix}users(id) ON DELETE SET NULL
+            CONSTRAINT fk_salary_user_id FOREIGN KEY (user_id) REFERENCES {$wpdb->prefix}users(id) ON DELETE CASCADE,
+            CONSTRAINT fk_salary_created_by FOREIGN KEY (created_by) REFERENCES {$wpdb->prefix}users(id) ON DELETE SET NULL
         ) $charset_collate;";
         
         // Create staff_working_days table
