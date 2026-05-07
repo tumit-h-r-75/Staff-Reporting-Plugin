@@ -31,6 +31,21 @@ class Bassmah_Staff_Reports_Salary_Calculator {
         
         // Get salary settings for this user
         $salary_table = $wpdb->prefix . 'staff_salary_settings';
+        $salary_table_exists = $wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $salary_table));
+        if (!$salary_table_exists) {
+            return array(
+                'monthly_salary' => 0,
+                'daily_rate' => 0,
+                'working_days' => 0,
+                'present_days' => 0,
+                'absent_days' => 0,
+                'holidays' => 0,
+                'total_deduction' => 0,
+                'net_salary' => 0,
+                'currency' => 'CAD'
+            );
+        }
+
         $salary_setting = $wpdb->get_row($wpdb->prepare(
             "SELECT * FROM $salary_table 
              WHERE user_id = %d AND effective_from <= %s 

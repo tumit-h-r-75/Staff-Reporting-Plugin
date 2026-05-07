@@ -88,12 +88,12 @@ class Bassmah_Staff_Reports_Public {
             'bassmah_public',
             array(
                 'ajaxurl' => admin_url('admin-ajax.php'),
-                'rest_url' => rest_url('bassmah-staff-reports/v1/'),
+                'rest_url' => rest_url('bassmah/v1/'),
                 'nonce' => wp_create_nonce('wp_rest'),
                 'strings' => array(
                     'confirm_delete' => __('Are you sure you want to delete this?', 'bassmah-staff-reports'),
                     'loading' => __('Loading...', 'bassmah-staff-reports'),
-                    'error' => __('An error occurred. Please try again.', 'bassmah-staff-reports'),
+                    'error_occurred' => __('An error occurred. Please try again.', 'bassmah-staff-reports'),
                     'success' => __('Success!', 'bassmah-staff-reports'),
                     'auth_required' => __('Authentication required. Please log in.', 'bassmah-staff-reports'),
                     'token_expired' => __('Session expired. Please refresh the page.', 'bassmah-staff-reports'),

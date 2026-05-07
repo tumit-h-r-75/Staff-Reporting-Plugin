@@ -36,12 +36,13 @@ jQuery(document).ready(function($) {
         $.ajax({
             url: bassmah_public.rest_url + 'reports',
             type: 'POST',
-            beforeSend: function(xhr) {
-                xhr.setRequestHeader('X-WP-Nonce', bassmah_public.nonce);
-            },
-            data: {
+            contentType: 'application/json; charset=utf-8',
+            data: JSON.stringify({
                 tasks: tasks,
                 status: 'submitted'
+            }),
+            beforeSend: function(xhr) {
+                xhr.setRequestHeader('X-WP-Nonce', bassmah_public.nonce);
             },
             dataType: 'json',
             success: function(response) {
@@ -60,6 +61,8 @@ jQuery(document).ready(function($) {
                 var message = bassmah_public.strings.error_occurred;
                 if (xhr.responseJSON && xhr.responseJSON.message) {
                     message = xhr.responseJSON.message;
+                } else if (xhr.responseText) {
+                    message = xhr.responseText;
                 }
                 showNotice(message, 'error');
             },
