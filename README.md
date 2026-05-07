@@ -281,8 +281,8 @@ This plugin is licensed under the GPL v2 or later.
 ## Credits
 
 - **Author**: Tumit
-- **Company**: Bassmah
-- **Website**: https://bassmah.ca
+- **Company**: Exprovia
+- **Website**: https://exprovia.com
 
 ---
 

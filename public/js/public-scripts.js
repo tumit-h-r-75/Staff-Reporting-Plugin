@@ -110,7 +110,7 @@ jQuery(document).ready(function($) {
     // Functions
     function validateReportForm($form) {
         var isValid = true;
-        var $taskRows = $('.bassmah-task-row');
+        var $taskRows = $('.bassmah-task-row').not('.bassmah-task-template');
         
         if ($taskRows.length === 0) {
             showNotice('Please add at least one task.', 'error');
@@ -143,12 +143,12 @@ jQuery(document).ready(function($) {
     function collectTaskData() {
         var tasks = [];
         
-        $('.bassmah-task-row').each(function() {
+        $('.bassmah-task-row').not('.bassmah-task-template').each(function() {
             var $row = $(this);
             var task = {
                 task_category: $row.find('.bassmah-task-category').val(),
                 task_description: $row.find('.bassmah-task-description').val(),
-                completion_status: $row.find('input[name="completion_status"]:checked').val(),
+                completion_status: $row.find('input[name^="completion_status_"]:checked').val(),
                 next_action: $row.find('.bassmah-next-action').val(),
                 manager_assigned_task: $row.find('.bassmah-manager-task').val(),
                 additional_notes: $row.find('.bassmah-additional-notes').val()

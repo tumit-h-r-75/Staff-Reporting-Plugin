@@ -46,7 +46,7 @@ class Bassmah_Staff_Reports_Public {
     public function enqueue_styles() {
         wp_enqueue_style(
             BASSMAH_STAFF_REPORTS_PLUGIN_NAME,
-            plugin_dir_url(__FILE__) . 'css/bassmah-staff-reports-public.css',
+            plugin_dir_url(__FILE__) . 'css/public-style.css',
             array(),
             BASSMAH_STAFF_REPORTS_VERSION,
             'all'
@@ -59,8 +59,10 @@ class Bassmah_Staff_Reports_Public {
      * @since    1.0.0
      */
     public function enqueue_scripts() {
-        // Enqueue jQuery
+        // Enqueue jQuery and jQuery UI
         wp_enqueue_script('jquery');
+        wp_enqueue_script('jquery-ui-datepicker');
+        wp_enqueue_style('jquery-ui-css', 'https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.min.css');
         
         // Enqueue JWT authentication script
         wp_enqueue_script(
@@ -74,7 +76,7 @@ class Bassmah_Staff_Reports_Public {
         // Enqueue main public script
         wp_enqueue_script(
             BASSMAH_STAFF_REPORTS_PLUGIN_NAME,
-            plugin_dir_url(__FILE__) . 'js/bassmah-staff-reports-public.js',
+            plugin_dir_url(__FILE__) . 'js/public-scripts.js',
             array('jquery', 'bassmah-jwt-auth'),
             BASSMAH_STAFF_REPORTS_VERSION,
             true
@@ -83,16 +85,19 @@ class Bassmah_Staff_Reports_Public {
         // Localize script with JWT support
         wp_localize_script(
             BASSMAH_STAFF_REPORTS_PLUGIN_NAME,
-            'bassmahAjax',
+            'bassmah_public',
             array(
                 'ajaxurl' => admin_url('admin-ajax.php'),
+                'rest_url' => rest_url('bassmah-staff-reports/v1/'),
+                'nonce' => wp_create_nonce('wp_rest'),
                 'strings' => array(
                     'confirm_delete' => __('Are you sure you want to delete this?', 'bassmah-staff-reports'),
                     'loading' => __('Loading...', 'bassmah-staff-reports'),
                     'error' => __('An error occurred. Please try again.', 'bassmah-staff-reports'),
                     'success' => __('Success!', 'bassmah-staff-reports'),
                     'auth_required' => __('Authentication required. Please log in.', 'bassmah-staff-reports'),
-                    'token_expired' => __('Session expired. Please refresh the page.', 'bassmah-staff-reports')
+                    'token_expired' => __('Session expired. Please refresh the page.', 'bassmah-staff-reports'),
+                    'report_submitted' => __('Report submitted successfully!', 'bassmah-staff-reports')
                 )
             )
         );

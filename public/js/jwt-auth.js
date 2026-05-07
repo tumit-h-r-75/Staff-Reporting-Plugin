@@ -39,7 +39,7 @@
             var self = this;
             
             $.ajax({
-                url: bassmahAjax.ajaxurl,
+                url: bassmah_public.ajaxurl,
                 method: 'POST',
                 data: {
                     action: 'bassmah_get_jwt_token'
