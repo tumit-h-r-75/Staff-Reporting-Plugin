@@ -1,0 +1,479 @@
+/**
+ * Public styles for Bassmah Staff Reports plugin
+ */
+
+/* Main container */
+.bassmah-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Form styles */
+.bassmah-report-form {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 25px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.bassmah-form-header {
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #0073aa;
+}
+
+.bassmah-form-header h2 {
+    margin: 0;
+    color: #333;
+    font-size: 24px;
+}
+
+.bassmah-form-header p {
+    margin: 10px 0 0 0;
+    color: #666;
+    font-size: 14px;
+}
+
+.bassmah-form-row {
+    margin-bottom: 20px;
+}
+
+.bassmah-form-label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #333;
+    font-size: 14px;
+}
+
+.bassmah-form-input,
+.bassmah-form-select,
+.bassmah-form-textarea {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+    transition: border-color 0.3s ease;
+}
+
+.bassmah-form-input:focus,
+.bassmah-form-select:focus,
+.bassmah-form-textarea:focus {
+    outline: none;
+    border-color: #0073aa;
+    box-shadow: 0 0 0 3px rgba(0,115,170,0.1);
+}
+
+.bassmah-form-textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+
+.bassmah-form-row.half {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+/* Task rows */
+.bassmah-task-container {
+    margin-bottom: 20px;
+}
+
+.bassmah-task-row {
+    background: #f9f9f9;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 20px;
+    margin-bottom: 15px;
+    position: relative;
+}
+
+.bassmah-task-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.bassmah-task-number {
+    font-weight: 600;
+    color: #0073aa;
+    font-size: 16px;
+}
+
+.bassmah-remove-task {
+    background: #d63638;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.bassmah-remove-task:hover {
+    background: #b32d2e;
+}
+
+.bassmah-task-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.bassmah-task-full {
+    grid-column: 1 / -1;
+}
+
+/* Radio button styles */
+.bassmah-radio-group {
+    display: flex;
+    gap: 20px;
+    margin-top: 8px;
+}
+
+.bassmah-radio-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.bassmah-radio-label input[type="radio"] {
+    margin-right: 8px;
+}
+
+/* Button styles */
+.bassmah-button {
+    display: inline-block;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+}
+
+.bassmah-button-primary {
+    background: #0073aa;
+    color: #fff;
+}
+
+.bassmah-button-primary:hover {
+    background: #005a87;
+    transform: translateY(-1px);
+}
+
+.bassmah-button-secondary {
+    background: #f6f7f7;
+    color: #333;
+    border: 2px solid #ddd;
+}
+
+.bassmah-button-secondary:hover {
+    background: #e9e9e9;
+    border-color: #0073aa;
+}
+
+.bassmah-button-success {
+    background: #00a32a;
+    color: #fff;
+}
+
+.bassmah-button-success:hover {
+    background: #007a22;
+}
+
+.bassmah-button-danger {
+    background: #d63638;
+    color: #fff;
+}
+
+.bassmah-button-danger:hover {
+    background: #b32d2e;
+}
+
+.bassmah-form-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: flex-end;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+}
+
+/* Dashboard styles */
+.bassmah-dashboard {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 25px;
+    margin-bottom: 30px;
+}
+
+.bassmah-dashboard-card {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 25px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.bassmah-dashboard-card h3 {
+    margin: 0 0 20px 0;
+    color: #333;
+    font-size: 18px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #0073aa;
+}
+
+.bassmah-stat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.bassmah-stat-item:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.bassmah-stat-label {
+    font-size: 14px;
+    color: #666;
+}
+
+.bassmah-stat-value {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+}
+
+.bassmah-stat-value.positive {
+    color: #00a32a;
+}
+
+.bassmah-stat-value.negative {
+    color: #d63638;
+}
+
+/* Notice styles */
+.bassmah-notice {
+    padding: 15px 20px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    font-size: 14px;
+}
+
+.bassmah-notice-success {
+    background: #edfaef;
+    border: 1px solid #00a32a;
+    color: #00a32a;
+}
+
+.bassmah-notice-error {
+    background: #fcf0f1;
+    border: 1px solid #d63638;
+    color: #d63638;
+}
+
+.bassmah-notice-warning {
+    background: #fcf9e8;
+    border: 1px solid #dba617;
+    color: #dba617;
+}
+
+.bassmah-notice-info {
+    background: #e7f3ff;
+    border: 1px solid #0073aa;
+    color: #0073aa;
+}
+
+.bassmah-notice h3,
+.bassmah-notice h4 {
+    margin: 0 0 10px 0;
+}
+
+.bassmah-notice p {
+    margin: 0;
+}
+
+/* Reports list */
+.bassmah-reports-list {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.bassmah-reports-header {
+    background: #f6f7f7;
+    padding: 20px 25px;
+    border-bottom: 1px solid #ddd;
+}
+
+.bassmah-reports-header h3 {
+    margin: 0;
+    color: #333;
+    font-size: 18px;
+}
+
+.bassmah-report-item {
+    padding: 20px 25px;
+    border-bottom: 1px solid #eee;
+    transition: background-color 0.3s ease;
+}
+
+.bassmah-report-item:last-child {
+    border-bottom: none;
+}
+
+.bassmah-report-item:hover {
+    background: #f9f9f9;
+}
+
+.bassmah-report-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.bassmah-report-date {
+    font-weight: 600;
+    color: #333;
+    font-size: 16px;
+}
+
+.bassmah-report-status {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.bassmah-status-submitted {
+    background: #e7f3ff;
+    color: #0073aa;
+}
+
+.bassmah-status-approved {
+    background: #edfaef;
+    color: #00a32a;
+}
+
+.bassmah-status-rejected {
+    background: #fcf0f1;
+    color: #d63638;
+}
+
+.bassmah-status-draft {
+    background: #fcf9e8;
+    color: #dba617;
+}
+
+.bassmah-report-meta {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 10px;
+}
+
+.bassmah-report-tasks {
+    margin-bottom: 10px;
+}
+
+.bassmah-task-summary {
+    font-size: 14px;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.bassmah-report-comment {
+    background: #f9f9f9;
+    border-left: 4px solid #0073aa;
+    padding: 10px 15px;
+    margin-top: 10px;
+    font-size: 14px;
+    color: #666;
+    font-style: italic;
+}
+
+.bassmah-report-comment strong {
+    color: #333;
+    font-style: normal;
+}
+
+/* Loading spinner */
+.bassmah-loading {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #0073aa;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Responsive styles */
+@media screen and (max-width: 768px) {
+    .bassmah-container {
+        padding: 15px;
+    }
+    
+    .bassmah-form-row.half,
+    .bassmah-task-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .bassmah-dashboard {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .bassmah-form-actions {
+        flex-direction: column;
+    }
+    
+    .bassmah-radio-group {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .bassmah-report-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+}
+
+/* Print styles */
+@media print {
+    .bassmah-form-actions,
+    .bassmah-button {
+        display: none !important;
+    }
+    
+    .bassmah-container {
+        max-width: none;
+        padding: 0;
+    }
+}

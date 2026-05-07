@@ -1,789 +1,358 @@
 <?php
-class Basmah_Staff_Reports_Public {
-    public function __construct() {
-        add_shortcode('bsr_staff_dashboard', array($this, 'render_staff_dashboard'));
-        add_shortcode('bassmah_staff_dashboard', array($this, 'render_bassmah_staff_dashboard'));
-        add_shortcode('bsr_report_form', array($this, 'render_report_form'));
-        add_shortcode('bassmah_report_form', array($this, 'render_bassmah_report_form'));
-        add_shortcode('bsr_my_reports', array($this, 'render_my_reports'));
-        add_shortcode('bassmah_my_reports', array($this, 'render_bassmah_my_reports'));
-        add_shortcode('bsr_salary_view', array($this, 'render_salary_view'));
-        add_shortcode('bassmah_salary_view', array($this, 'render_bassmah_salary_view'));
-        add_action('wp_enqueue_scripts', array($this, 'enqueue_public_assets'));
-        add_action('init', array($this, 'handle_report_submission'));
+/**
+ * The public-facing functionality of the plugin.
+ *
+ * @since      1.0.0
+ * @package    Bassmah_Staff_Reports
+ * @author     Tumit <tumit@bassmah.ca>
+ */
+class Bassmah_Staff_Reports_Public {
+
+    /**
+     * The ID of this plugin.
+     *
+     * @since    1.0.0
+     * @access   private
+     * @var      string    $plugin_name    The ID of this plugin.
+     */
+    private $plugin_name;
+
+    /**
+     * The version of this plugin.
+     *
+     * @since    1.0.0
+     * @access   private
+     * @var      string    $version    The current version of this plugin.
+     */
+    private $version;
+
+    /**
+     * Initialize the class and set its properties.
+     *
+     * @since    1.0.0
+     * @param    string    $plugin_name       The name of the plugin.
+     * @param    string    $version    The version of this plugin.
+     */
+    public function __construct($plugin_name, $version) {
+        $this->plugin_name = $plugin_name;
+        $this->version = $version;
     }
-    
-    public function enqueue_public_assets() {
-        wp_enqueue_style('bsr-public-css', BASMAH_STAFF_REPORTS_PLUGIN_URL . 'public/assets/style.css');
-        wp_enqueue_style('bsr-tailwind-utilities', BASMAH_STAFF_REPORTS_PLUGIN_URL . 'public/css/tailwind-utilities.css', array(), '1.0.0');
-        wp_enqueue_script('bsr-public-js', BASMAH_STAFF_REPORTS_PLUGIN_URL . 'public/assets/script.js', array('jquery'), null, true);
-        
-        // Localize script with nonce and other data
-        wp_localize_script('bsr-public-js', 'bsrData', array(
-            'nonce' => wp_create_nonce('wp_rest'),
-            'apiUrl' => rest_url('bassmah/v1/'),
-            'ajaxUrl' => admin_url('admin-ajax.php')
+
+    /**
+     * Register the stylesheets for the public-facing side of the site.
+     *
+     * @since    1.0.0
+     */
+    public function enqueue_styles() {
+        wp_enqueue_style(
+            $this->plugin_name,
+            plugin_dir_url(__FILE__) . 'css/public-style.css',
+            array(),
+            $this->version,
+            'all'
+        );
+
+        // Add date picker CSS
+        wp_enqueue_style('jquery-ui-datepicker');
+    }
+
+    /**
+     * Register the JavaScript for the public-facing side of the site.
+     *
+     * @since    1.0.0
+     */
+    public function enqueue_scripts() {
+        wp_enqueue_script(
+            $this->plugin_name,
+            plugin_dir_url(__FILE__) . 'js/public-scripts.js',
+            array('jquery', 'jquery-ui-datepicker'),
+            $this->version,
+            false
+        );
+
+        // Localize script
+        wp_localize_script($this->plugin_name, 'bassmah_public', array(
+            'ajax_url' => admin_url('admin-ajax.php'),
+            'nonce' => wp_create_nonce('bassmah_public_nonce'),
+            'rest_url' => rest_url('bassmah/v1/'),
+            'strings' => array(
+                'confirm_submit' => __('Are you sure you want to submit this report?', 'bassmah-staff-reports'),
+                'task_required' => __('Task description is required.', 'bassmah-staff-reports'),
+                'loading' => __('Loading...', 'bassmah-staff-reports'),
+                'report_submitted' => __('Report submitted successfully!', 'bassmah-staff-reports'),
+                'error_occurred' => __('An error occurred. Please try again.', 'bassmah-staff-reports')
+            )
         ));
-        
-        // Enqueue React-style components
-        wp_enqueue_style('bsr-react-components-css', BASMAH_STAFF_REPORTS_PLUGIN_URL . 'public/assets/react-components/index.css', array(), '1.0.0');
-        wp_enqueue_script('bsr-react-components-js', BASMAH_STAFF_REPORTS_PLUGIN_URL . 'public/assets/react-components/index.js', array('jquery'), '1.0.0', true);
-        
-        // Pass WordPress data to JavaScript
-        wp_localize_script('bsr-react-components-js', 'bsrData', array(
-            'apiUrl' => rest_url('bsr/v1/'),
-            'nonce' => wp_create_nonce('wp_rest'),
-            'userId' => get_current_user_id(),
-            'userName' => wp_get_current_user()->display_name,
-            'userRole' => $this->get_user_role(),
-            'pluginUrl' => BASMAH_STAFF_REPORTS_PLUGIN_URL
-        ));
-    }
-    
-    public function render_staff_dashboard() {
-        return $this->render_bassmah_staff_dashboard();
     }
 
-    public function render_bassmah_staff_dashboard() {
+    /**
+     * Register shortcodes
+     *
+     * @since    1.0.0
+     */
+    public function register_shortcodes() {
+        add_shortcode('bassmah_report_form', array($this, 'render_report_form'));
+        add_shortcode('bassmah_staff_dashboard', array($this, 'render_staff_dashboard'));
+        add_shortcode('bassmah_my_reports', array($this, 'render_my_reports'));
+    }
+
+    /**
+     * Render report form shortcode
+     *
+     * @since    1.0.0
+     * @param    array    $atts    Shortcode attributes
+     * @return   string
+     */
+    public function render_report_form($atts) {
         if (!is_user_logged_in()) {
-            return '<p style="padding: 20px; background: #fff; border-radius: 8px; text-align: center;">Please log in to view your dashboard.</p>';
-        }
-        
-        $is_admin = current_user_can('manage_options');
-        $can_view = current_user_can('basmah_view_my_salary') || $is_admin;
-        
-        if (!$can_view) {
-            return '<p style="padding: 20px; background: #fff; border-radius: 8px; text-align: center;">You do not have permission to view the dashboard.</p>';
+            return '<p>' . __('Please log in to submit a report.', 'bassmah-staff-reports') . '</p>';
         }
 
+        if (!current_user_can('bassmah_submit_reports')) {
+            return '<p>' . __('You do not have permission to submit reports.', 'bassmah-staff-reports') . '</p>';
+        }
+
+        // Check if already submitted today
+        $report_class = new Bassmah_Staff_Reports_Report();
+        $today_report = $report_class->get_today_report();
+
+        if ($today_report) {
+            return $this->render_already_submitted_message($today_report);
+        }
+
+        ob_start();
+        require_once plugin_dir_path(__FILE__) . 'views/report-form.php';
+        return ob_get_clean();
+    }
+
+    /**
+     * Render staff dashboard shortcode
+     *
+     * @since    1.0.0
+     * @param    array    $atts    Shortcode attributes
+     * @return   string
+     */
+    public function render_staff_dashboard($atts) {
+        if (!is_user_logged_in()) {
+            return '<p>' . __('Please log in to view your dashboard.', 'bassmah-staff-reports') . '</p>';
+        }
+
+        if (!current_user_can('bassmah_view_own_reports')) {
+            return '<p>' . __('You do not have permission to view this dashboard.', 'bassmah-staff-reports') . '</p>';
+        }
+
+        ob_start();
+        require_once plugin_dir_path(__FILE__) . 'views/staff-dashboard.php';
+        return ob_get_clean();
+    }
+
+    /**
+     * Render my reports shortcode
+     *
+     * @since    1.0.0
+     * @param    array    $atts    Shortcode attributes
+     * @return   string
+     */
+    public function render_my_reports($atts) {
+        if (!is_user_logged_in()) {
+            return '<p>' . __('Please log in to view your reports.', 'bassmah-staff-reports') . '</p>';
+        }
+
+        if (!current_user_can('bassmah_view_own_reports')) {
+            return '<p>' . __('You do not have permission to view reports.', 'bassmah-staff-reports') . '</p>';
+        }
+
+        ob_start();
+        require_once plugin_dir_path(__FILE__) . 'views/my-reports.php';
+        return ob_get_clean();
+    }
+
+    /**
+     * Render already submitted message
+     *
+     * @since    1.0.0
+     * @param    object    $report    Today's report
+     * @return   string
+     */
+    private function render_already_submitted_message($report) {
         $user = wp_get_current_user();
-        $user_id = $user->ID;
+        $report_date = date_i18n(get_option('date_format'), strtotime($report->report_date));
         
-        // Include modern dashboard
-        ob_start();
-        ?>
-        <div class="bsr-card max-w-4xl mx-auto p-6">
-            <div class="bsr-card-header">
-                <h2 class="bsr-card-title text-2xl">Staff Dashboard</h2>
-                <p class="text-muted-foreground">Welcome back, <strong><?php echo esc_html($user->display_name); ?></strong>!</p>
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
-                <!-- Quick Actions Card -->
-                <div class="bsr-card">
-                    <div class="bsr-card-header">
-                        <h3 class="bsr-card-title text-lg">🚀 Quick Actions</h3>
-                    </div>
-                    <div class="p-6 space-y-3">
-                        <a href="/report-form" class="bsr-button bsr-button-primary w-full">
-                            📝 Submit Report
-                        </a>
-                        <a href="/my-reports" class="bsr-button bsr-button-secondary w-full">
-                            📋 My Reports
-                        </a>
-                        <a href="/salary" class="bsr-button bsr-button-secondary w-full">
-                            💰 Salary Info
-                        </a>
-                    </div>
-                </div>
-                
-                <!-- Today's Status Card -->
-                <div class="bsr-card">
-                    <div class="bsr-card-header">
-                        <h3 class="bsr-card-title text-lg">📊 Today's Status</h3>
-                    </div>
-                    <div class="p-6">
-                        <div class="space-y-4">
-                            <div class="flex items-center justify-between">
-                                <span class="text-muted-foreground">Date:</span>
-                                <span class="font-semibold"><?php echo current_time('Y-m-d'); ?></span>
-                            </div>
-                            <div class="flex items-center justify-between">
-                                <span class="text-muted-foreground">Status:</span>
-                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                    ✅ Ready
-                                </span>
-                            </div>
-                            <div class="flex items-center justify-between">
-                                <span class="text-muted-foreground">Report Submitted:</span>
-                                <span class="font-semibold" id="today-report-status">Not yet</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Stats Overview Card -->
-                <div class="bsr-card">
-                    <div class="bsr-card-header">
-                        <h3 class="bsr-card-title text-lg">📈 This Month</h3>
-                    </div>
-                    <div class="p-6">
-                        <div class="space-y-4">
-                            <div class="flex items-center justify-between">
-                                <span class="text-muted-foreground">Reports:</span>
-                                <span class="font-semibold" id="monthly-reports">0</span>
-                            </div>
-                            <div class="flex items-center justify-between">
-                                <span class="text-muted-foreground">Working Days:</span>
-                                <span class="font-semibold">22</span>
-                            </div>
-                            <div class="flex items-center justify-between">
-                                <span class="text-muted-foreground">Completion:</span>
-                                <span class="font-semibold text-green-600" id="completion-rate">0%</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Recent Activity -->
-            <div class="mt-8">
-                <div class="bsr-card">
-                    <div class="bsr-card-header">
-                        <h3 class="bsr-card-title text-lg">📋 Recent Activity</h3>
-                    </div>
-                    <div class="p-6">
-                        <div id="recent-activity" class="space-y-3">
-                            <p class="text-muted-foreground text-sm">Loading recent activity...</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        $html = '<div class="bassmah-notice bassmah-notice-success">';
+        $html .= '<h3>' . __('Report Already Submitted', 'bassmah-staff-reports') . '</h3>';
+        $html .= '<p>' . sprintf(
+            __('Hello %s, you have already submitted your report for %s at %s.', 'bassmah-staff-reports'),
+            esc_html($user->display_name),
+            '<strong>' . $report_date . '</strong>',
+            date_i18n(get_option('time_format'), strtotime($report->submission_time))
+        ) . '</p>';
         
-        <style>
-        .bsr-card {
-            border-radius: calc(var(--radius) + 6px);
-            border: 1px solid hsl(var(--border));
-            background-color: hsl(var(--card));
-            color: hsl(var(--card-foreground));
-            box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        if ($report->manager_comment) {
+            $html .= '<div class="manager-comment">';
+            $html .= '<h4>' . __('Manager Comment:', 'bassmah-staff-reports') . '</h4>';
+            $html .= '<p>' . esc_html($report->manager_comment) . '</p>';
+            $html .= '</div>';
         }
         
-        .bsr-card-header {
-            display: flex;
-            flex-direction: column;
-            gap: 0.375rem;
-            padding: 1.5rem;
-            padding-bottom: 0;
-        }
+        $html .= '</div>';
         
-        .bsr-card-title {
-            font-size: 1.125rem;
-            line-height: 1.75rem;
-            font-weight: 600;
-            letter-spacing: -0.025em;
-        }
-        
-        .bsr-button {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            white-space: nowrap;
-            border-radius: calc(var(--radius) + 2px);
-            font-size: 0.875rem;
-            font-weight: 500;
-            transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
-            transition-duration: 150ms;
-            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-            outline: 2px solid transparent;
-            outline-offset: 2px;
-            border: none;
-            cursor: pointer;
-            text-decoration: none;
-        }
-        
-        .bsr-button-primary {
-            background-color: hsl(var(--primary));
-            color: hsl(var(--primary-foreground));
-            box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-        }
-        
-        .bsr-button-primary:hover {
-            background-color: hsl(var(--primary) / 0.9);
-        }
-        
-        .bsr-button-secondary {
-            background-color: hsl(var(--secondary));
-            color: hsl(var(--secondary-foreground));
-            box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-        }
-        
-        .bsr-button-secondary:hover {
-            background-color: hsl(var(--secondary) / 0.8);
-        }
-        
-        .w-full {
-            width: 100%;
-        }
-        
-        .space-y-3 > * + * {
-            margin-top: 0.75rem;
-        }
-        
-        .space-y-4 > * + * {
-            margin-top: 1rem;
-        }
-        
-        .grid {
-            display: grid;
-        }
-        
-        .grid-cols-1 {
-            grid-template-columns: repeat(1, minmax(0, 1fr));
-        }
-        
-        .gap-6 {
-            gap: 1.5rem;
-        }
-        
-        .mt-6 {
-            margin-top: 1.5rem;
-        }
-        
-        .mt-8 {
-            margin-top: 2rem;
-        }
-        
-        .p-6 {
-            padding: 1.5rem;
-        }
-        
-        .text-2xl {
-            font-size: 1.5rem;
-            line-height: 2rem;
-        }
-        
-        .text-lg {
-            font-size: 1.125rem;
-            line-height: 1.75rem;
-        }
-        
-        .text-sm {
-            font-size: 0.875rem;
-            line-height: 1.25rem;
-        }
-        
-        .text-muted-foreground {
-            color: hsl(var(--muted-foreground));
-        }
-        
-        .font-semibold {
-            font-weight: 600;
-        }
-        
-        .text-green-600 {
-            color: #16a34a;
-        }
-        
-        .bg-green-100 {
-            background-color: #dcfce7;
-        }
-        
-        .text-green-800 {
-            color: #166534;
-        }
-        
-        .text-xs {
-            font-size: 0.75rem;
-            line-height: 1rem;
-        }
-        
-        .inline-flex {
-            display: inline-flex;
-        }
-        
-        .items-center {
-            align-items: center;
-        }
-        
-        .justify-between {
-            justify-content: space-between;
-        }
-        
-        .px-2 {
-            padding-left: 0.5rem;
-            padding-right: 0.5rem;
-        }
-        
-        .py-1 {
-            padding-top: 0.25rem;
-            padding-bottom: 0.25rem;
-        }
-        
-        .rounded-full {
-            border-radius: 9999px;
-        }
-        
-        .max-w-4xl {
-            max-width: 56rem;
-        }
-        
-        .mx-auto {
-            margin-left: auto;
-            margin-right: auto;
-        }
-        
-        @media (min-width: 768px) {
-            .md\:grid-cols-3 {
-                grid-template-columns: repeat(3, minmax(0, 1fr));
-            }
-        }
-        </style>
-        
-        <script>
-        jQuery(document).ready(function($) {
-            // Load today's report status
-            $.ajax({
-                url: '/wp-json/bassmah/v1/reports/mine',
-                method: 'GET',
-                beforeSend: function(xhr) {
-                    xhr.setRequestHeader('X-WP-Nonce', bsrData ? bsrData.nonce : '');
-                },
-                success: function(reports) {
-                    const today = new Date().toISOString().split('T')[0];
-                    const todayReport = reports.find(r => r.report_date === today);
-                    
-                    if (todayReport) {
-                        $('#today-report-status').text('Submitted ✅').addClass('text-green-600');
-                    }
-                    
-                    // Update monthly stats
-                    const currentMonth = new Date().getMonth();
-                    const currentYear = new Date().getFullYear();
-                    const monthReports = reports.filter(r => {
-                        const reportDate = new Date(r.report_date);
-                        return reportDate.getMonth() === currentMonth && reportDate.getFullYear() === currentYear;
-                    });
-                    
-                    $('#monthly-reports').text(monthReports.length);
-                    const completionRate = Math.round((monthReports.length / 22) * 100);
-                    $('#completion-rate').text(completionRate + '%');
-                    
-                    // Load recent activity
-                    if (monthReports.length > 0) {
-                        const recentHtml = monthReports.slice(0, 5).map(report => `
-                            <div class="flex items-center justify-between p-3 bg-muted rounded-lg">
-                                <div>
-                                    <div class="font-medium">${report.report_date}</div>
-                                    <div class="text-sm text-muted-foreground">${report.status}</div>
-                                </div>
-                                <div class="text-sm">
-                                    ${report.status === 'approved' ? '✅' : report.status === 'pending' ? '⏳' : '❌'}
-                                </div>
-                            </div>
-                        `).join('');
-                        
-                        $('#recent-activity').html(recentHtml);
-                    } else {
-                        $('#recent-activity').html('<p class="text-muted-foreground text-sm">No reports this month yet.</p>');
-                    }
-                }
-            });
-        });
-        </script>
-        <?php
-        return ob_get_clean();
-    }
-    
-    public function render_report_form() {
-        return $this->render_bassmah_report_form();
-    }
-    
-    public function render_my_reports() {
-        return $this->render_bassmah_my_reports();
+        return $html;
     }
 
-    public function render_bassmah_my_reports() {
-        if (!is_user_logged_in()) {
-            return '<p style="padding: 20px; background: #fff; border-radius: 8px; text-align: center;">Please log in to view your reports.</p>';
-        }
-        
-        $is_admin = current_user_can('manage_options');
-        $can_view = current_user_can('basmah_view_my_reports') || $is_admin;
-        
-        if (!$can_view) {
-            return '<p style="padding: 20px; background: #fff; border-radius: 8px; text-align: center;">You do not have permission to view reports.</p>';
+    /**
+     * Handle AJAX requests from frontend
+     *
+     * @since    1.0.0
+     */
+    public function handle_ajax_requests() {
+        check_ajax_referer('bassmah_public_nonce', 'nonce');
+
+        $action = $_POST['action_type'] ?? '';
+
+        switch ($action) {
+            case 'submit_report':
+                $this->submit_report_frontend();
+                break;
+            case 'get_my_reports':
+                $this->get_my_reports_frontend();
+                break;
+            case 'get_dashboard_data':
+                $this->get_dashboard_data_frontend();
+                break;
+            default:
+                wp_send_json_error(__('Invalid action', 'bassmah-staff-reports'));
         }
 
-        $user_id = get_current_user_id();
-        $reports = Basmah_Staff_Reports_Reports::get_reports(array('user_id' => $user_id));
-
-        ob_start();
-        ?>
-        <div class="bsr-my-reports">
-            <h2>My Reports</h2>
-            <?php if (empty($reports)): ?>
-                <p>No reports found.</p>
-            <?php else: ?>
-                <table class="reports-table">
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Status</th>
-                            <th>Submitted At</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($reports as $report): ?>
-                            <tr>
-                                <td><?php echo esc_html(date('F j, Y', strtotime($report['report_date']))); ?></td>
-                                <td>
-                                    <span class="status-badge <?php echo sanitize_title($report['status']); ?>">
-                                        <?php echo esc_html(ucfirst($report['status'])); ?>
-                                    </span>
-                                </td>
-                                <td><?php echo esc_html(date('F j, Y g:i a', strtotime($report['created_at']))); ?></td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            <?php endif; ?>
-        </div>
-        <?php
-        return ob_get_clean();
-    }
-    
-    public function render_salary_view() {
-        return $this->render_bassmah_salary_view();
-    }
-    
-    public function render_bassmah_salary_view() {
-        if (!is_user_logged_in()) {
-            return '<p style="padding: 20px; background: #fff; border-radius: 8px; text-align: center;">Please log in to view salary information.</p>';
-        }
-
-        $current_user = wp_get_current_user();
-        $user_id = get_current_user_id();
-        
-        // Allow admin or user to view their own salary
-        $is_admin = current_user_can('manage_options');
-        $can_view = current_user_can('basmah_view_my_salary') || $is_admin;
-        
-        if (!$can_view) {
-            return '<p style="padding: 20px; background: #fff; border-radius: 8px; text-align: center;">You do not have permission to view salary information.</p>';
-        }
-
-        // Get current month/year
-        $current_month = date('n');
-        $current_year = date('Y');
-        
-        // Get salary calculation
-        $salary_data = Basmah_Staff_Reports_Salary::calculate_salary($user_id, $current_month, $current_year);
-        
-        ob_start();
-        ?>
-        <div class="bsr-card max-w-4xl mx-auto p-6">
-            <div class="bsr-card-header">
-                <h2 class="bsr-card-title text-2xl">💰 Salary Information</h2>
-                <p class="text-muted-foreground">Your salary summary for <?php echo date('F Y'); ?></p>
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                <!-- Salary Settings Card -->
-                <div class="bsr-card">
-                    <div class="bsr-card-header">
-                        <h3 class="bsr-card-title text-lg">📊 Salary Settings</h3>
-                    </div>
-                    <div class="p-6">
-                        <div class="space-y-4">
-                            <div class="flex justify-between">
-                                <span class="text-muted-foreground">Monthly Salary:</span>
-                                <span class="font-semibold"><?php echo number_format($salary_data['monthly_salary'], 2); ?> <?php echo esc_html($salary_data['currency']); ?></span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-muted-foreground">Daily Rate:</span>
-                                <span class="font-semibold"><?php echo number_format($salary_data['daily_rate'], 2); ?> <?php echo esc_html($salary_data['currency']); ?></span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-muted-foreground">Working Days:</span>
-                                <span class="font-semibold"><?php echo $salary_data['working_days']; ?></span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- This Month Summary Card -->
-                <div class="bsr-card">
-                    <div class="bsr-card-header">
-                        <h3 class="bsr-card-title text-lg">📈 This Month Summary</h3>
-                    </div>
-                    <div class="p-6">
-                        <div class="space-y-4">
-                            <div class="flex justify-between">
-                                <span class="text-muted-foreground">Reports Submitted:</span>
-                                <span class="font-semibold"><?php echo $salary_data['submitted_days']; ?> days</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-muted-foreground">Missing Days:</span>
-                                <span class="font-semibold text-red-600"><?php echo $salary_data['missing_days']; ?> days</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-muted-foreground">Total Deduction:</span>
-                                <span class="font-semibold text-red-600">-<?php echo number_format($salary_data['total_deduction'], 2); ?> <?php echo esc_html($salary_data['currency']); ?></span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-muted-foreground">Net Salary:</span>
-                                <span class="font-semibold text-green-600 text-lg"><?php echo number_format($salary_data['net_salary'], 2); ?> <?php echo esc_html($salary_data['currency']); ?></span>
-                            </div>
-                        </div>
-                        
-                        <?php if ($salary_data['missing_days'] > 0): ?>
-                            <div class="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-                                <p class="text-red-800 text-sm">
-                                    <strong>⚠️ Salary Deduction Alert</strong><br>
-                                    You have <?php echo $salary_data['missing_days']; ?> missing days this month.
-                                    Submit your daily reports to avoid salary deduction.
-                                </p>
-                            </div>
-                        <?php endif; ?>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <style>
-        .bsr-card {
-            border-radius: calc(var(--radius) + 6px);
-            border: 1px solid hsl(var(--border));
-            background-color: hsl(var(--card));
-            color: hsl(var(--card-foreground));
-            box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-        }
-        
-        .bsr-card-header {
-            display: flex;
-            flex-direction: column;
-            gap: 0.375rem;
-            padding: 1.5rem;
-            padding-bottom: 0;
-        }
-        
-        .bsr-card-title {
-            font-size: 1.125rem;
-            line-height: 1.75rem;
-            font-weight: 600;
-            letter-spacing: -0.025em;
-        }
-        
-        .space-y-4 > * + * {
-            margin-top: 1rem;
-        }
-        
-        .flex {
-            display: flex;
-        }
-        
-        .justify-between {
-            justify-content: space-between;
-        }
-        
-        .text-muted-foreground {
-            color: hsl(var(--muted-foreground));
-        }
-        
-        .font-semibold {
-            font-weight: 600;
-        }
-        
-        .text-red-600 {
-            color: #dc2626;
-        }
-        
-        .text-green-600 {
-            color: #16a34a;
-        }
-        
-        .text-lg {
-            font-size: 1.125rem;
-            line-height: 1.75rem;
-        }
-        
-        .text-2xl {
-            font-size: 1.5rem;
-            line-height: 2rem;
-        }
-        
-        .grid {
-            display: grid;
-        }
-        
-        .grid-cols-1 {
-            grid-template-columns: repeat(1, minmax(0, 1fr));
-        }
-        
-        .gap-6 {
-            gap: 1.5rem;
-        }
-        
-        .p-6 {
-            padding: 1.5rem;
-        }
-        
-        .mt-6 {
-            margin-top: 1.5rem;
-        }
-        
-        .mt-4 {
-            margin-top: 1rem;
-        }
-        
-        .bg-red-50 {
-            background-color: #fef2f2;
-        }
-        
-        .border-red-200 {
-            border-color: #fecaca;
-        }
-        
-        .rounded-lg {
-            border-radius: calc(var(--radius) + 4px);
-        }
-        
-        .text-red-800 {
-            color: #991b1b;
-        }
-        
-        .text-sm {
-            font-size: 0.875rem;
-            line-height: 1.25rem;
-        }
-        
-        .max-w-4xl {
-            max-width: 56rem;
-        }
-        
-        .mx-auto {
-            margin-left: auto;
-            margin-right: auto;
-        }
-        
-        @media (min-width: 768px) {
-            .md\:grid-cols-2 {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
-        }
-        </style>
-        <?php
-        return ob_get_clean();
+        wp_die();
     }
 
-    public function render_bassmah_report_form() {
-        if (!is_user_logged_in()) {
-            return '<p style="padding: 20px; background: #fff; border-radius: 8px; text-align: center;">Please log in to submit a report.</p>';
+    /**
+     * Handle report submission from frontend
+     *
+     * @since    1.0.0
+     */
+    private function submit_report_frontend() {
+        if (!current_user_can('bassmah_submit_reports')) {
+            wp_send_json_error(__('You do not have permission to submit reports.', 'bassmah-staff-reports'));
         }
 
-        $current_user = wp_get_current_user();
-        $user_id = get_current_user_id();
-        
-        // Allow admin (manage_options) to see all reports/forms, but restrict staff to submission only
-        $is_admin = current_user_can('manage_options');
-        $is_staff = current_user_can('basmah_submit_report');
-        
-        if (!$is_admin && !$is_staff) {
-            return '<p style="padding: 20px; background: #fff; border-radius: 8px; text-align: center;">You do not have permission to submit reports.</p>';
+        $tasks = $_POST['tasks'] ?? array();
+        if (empty($tasks)) {
+            wp_send_json_error(__('At least one task is required.', 'bassmah-staff-reports'));
         }
 
-        // Include the actual form file
-        ob_start();
-        include BASMAH_STAFF_REPORTS_PLUGIN_DIR . 'public/views/report-form.php';
-        return ob_get_clean();
-    }
-
-    // Helper method to get user role
-    private function get_user_role() {
-        $user = wp_get_current_user();
-        if (in_array('administrator', $user->roles)) {
-            return 'Administrator';
-        } elseif (in_array('basmah_manager', $user->roles)) {
-            return 'Manager';
-        } elseif (in_array('basmah_staff', $user->roles)) {
-            return 'Staff Member';
-        } else {
-            return 'User';
-        }
-    }
-
-    public function handle_report_submission() {
-        if (!isset($_POST['bassmah_submit_report'])) {
-            return;
-        }
-
-        if (!is_user_logged_in() || !current_user_can('basmah_submit_report')) {
-            return;
-        }
-
-        if (!isset($_POST['bassmah_report_nonce']) || !wp_verify_nonce($_POST['bassmah_report_nonce'], 'bassmah_report_submit')) {
-            return;
-        }
-
-        $user_id = get_current_user_id();
-        $report_date = current_time('Y-m-d');
-        $tasks = isset($_POST['tasks']) && is_array($_POST['tasks']) ? $_POST['tasks'] : array();
-        
-        $sanitized_tasks = array();
+        // Validate tasks
         foreach ($tasks as $task) {
-            if (!is_array($task)) {
-                continue;
+            if (empty($task['task_description'])) {
+                wp_send_json_error(__('Task description is required for all tasks.', 'bassmah-staff-reports'));
             }
+        }
 
-            $task_category = isset($task['task_category']) ? sanitize_text_field($task['task_category']) : '';
-            $task_description = isset($task['task_description']) ? sanitize_textarea_field($task['task_description']) : '';
-            $status = isset($task['status']) ? sanitize_text_field($task['status']) : '';
-            $next_action = isset($task['next_action']) ? sanitize_textarea_field($task['next_action']) : '';
+        $report_data = array(
+            'user_id' => get_current_user_id(),
+            'report_date' => current_time('Y-m-d'),
+            'tasks' => $tasks,
+            'status' => 'submitted'
+        );
 
-            if ($task_category === '' || $task_description === '' || $status === '' || $next_action === '') {
-                continue;
-            }
+        $report_class = new Bassmah_Staff_Reports_Report();
+        $result = $report_class->submit_report($report_data);
 
-            $task_data = array(
-                'task_category' => $task_category,
-                'task_description' => $task_description,
-                'status' => $status,
-                'next_action' => $next_action
+        if (is_wp_error($result)) {
+            wp_send_json_error($result->get_error_message());
+        }
+
+        wp_send_json_success(array(
+            'message' => __('Report submitted successfully!', 'bassmah-staff-reports'),
+            'report_id' => $result
+        ));
+    }
+
+    /**
+     * Get user's reports for frontend display
+     *
+     * @since    1.0.0
+     */
+    private function get_my_reports_frontend() {
+        if (!current_user_can('bassmah_view_own_reports')) {
+            wp_send_json_error(__('You do not have permission to view reports.', 'bassmah-staff-reports'));
+        }
+
+        $page = intval($_POST['page'] ?? 1);
+        $per_page = intval($_POST['per_page'] ?? 10);
+        $date_from = $_POST['date_from'] ?? '';
+        $date_to = $_POST['date_to'] ?? '';
+
+        $args = array(
+            'limit' => $per_page,
+            'offset' => ($page - 1) * $per_page
+        );
+
+        if ($date_from) {
+            $args['date_from'] = $date_from;
+        }
+        if ($date_to) {
+            $args['date_to'] = $date_to;
+        }
+
+        $report_class = new Bassmah_Staff_Reports_Report();
+        $reports = $report_class->get_my_reports($args);
+
+        // Format reports for frontend
+        $formatted_reports = array();
+        foreach ($reports as $report) {
+            $formatted_reports[] = array(
+                'id' => $report->id,
+                'report_date' => $report->report_date,
+                'submission_time' => $report->submission_time,
+                'status' => $report->status,
+                'tasks' => $report->tasks,
+                'manager_comment' => $report->manager_comment
             );
-            
-            if (!empty($task['manager_assigned_task'])) {
-                $task_data['manager_assigned_task'] = sanitize_textarea_field($task['manager_assigned_task']);
-            }
-            if (!empty($task['additional_notes'])) {
-                $task_data['additional_notes'] = sanitize_textarea_field($task['additional_notes']);
-            }
-            
-            $sanitized_tasks[] = $task_data;
         }
 
-        $existing_report = Basmah_Staff_Reports_Reports::report_exists($user_id, $report_date);
+        wp_send_json_success(array(
+            'reports' => $formatted_reports,
+            'page' => $page,
+            'per_page' => $per_page
+        ));
+    }
 
-        if ($existing_report) {
-            wp_redirect(add_query_arg('duplicate_report', '1'));
-            exit;
+    /**
+     * Get dashboard data for frontend
+     *
+     * @since    1.0.0
+     */
+    private function get_dashboard_data_frontend() {
+        if (!current_user_can('bassmah_view_own_reports')) {
+            wp_send_json_error(__('You do not have permission to view dashboard.', 'bassmah-staff-reports'));
         }
 
-        if (empty($sanitized_tasks)) {
-            wp_redirect(add_query_arg('report_error', '1'));
-            exit;
-        }
+        $user_id = get_current_user_id();
+        $salary_class = new Bassmah_Staff_Reports_Salary();
+        $dashboard_data = $salary_class->get_dashboard_stats($user_id);
 
-        $inserted = Basmah_Staff_Reports_Reports::create_report(array(
-            'user_id' => $user_id,
-            'report_date' => $report_date,
-            'tasks' => $sanitized_tasks
+        // Get recent reports
+        $report_class = new Bassmah_Staff_Reports_Report();
+        $recent_reports = $report_class->get_my_reports(array(
+            'limit' => 5,
+            'orderby' => 'report_date',
+            'order' => 'DESC'
         ));
 
-        if ($inserted) {
-            Basmah_Staff_Reports_Emails::notify_manager_on_report_submission($user_id, $report_date);
-            wp_redirect(add_query_arg('report_submitted', '1'));
-            exit;
+        $formatted_recent_reports = array();
+        foreach ($recent_reports as $report) {
+            $formatted_recent_reports[] = array(
+                'id' => $report->id,
+                'report_date' => $report->report_date,
+                'status' => $report->status,
+                'task_count' => count($report->tasks ?? array())
+            );
         }
 
-        if (Basmah_Staff_Reports_Reports::report_exists($user_id, $report_date)) {
-            wp_redirect(add_query_arg('duplicate_report', '1'));
-            exit;
-        }
-
-        wp_redirect(add_query_arg('report_error', '1'));
-        exit;
+        wp_send_json_success(array(
+            'dashboard' => $dashboard_data,
+            'recent_reports' => $formatted_recent_reports
+        ));
     }
 }

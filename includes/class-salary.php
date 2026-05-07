@@ -1,113 +1,426 @@
 <?php
-class Basmah_Staff_Reports_Salary {
-    public static function get_settings($user_id = null) {
+/**
+ * Handle salary calculations and management.
+ *
+ * @since      1.0.0
+ * @package    Bassmah_Staff_Reports
+ * @author     Tumit <tumit@bassmah.ca>
+ */
+class Bassmah_Staff_Reports_Salary {
+
+    /**
+     * Table name for salary settings
+     *
+     * @var string
+     */
+    private $salary_table;
+
+    /**
+     * Table name for working days
+     *
+     * @var string
+     */
+    private $working_days_table;
+
+    /**
+     * Report class instance
+     *
+     * @var Bassmah_Staff_Reports_Report
+     */
+    private $report_class;
+
+    /**
+     * Constructor
+     */
+    public function __construct() {
         global $wpdb;
-        $table_name = $wpdb->prefix . 'staff_salary_settings';
-        
-        if ($user_id) {
-            $settings = $wpdb->get_row($wpdb->prepare(
-                "SELECT * FROM $table_name WHERE user_id = %d",
-                $user_id
-            ), ARRAY_A);
-            
-            if (!$settings) {
-                return array(
-                    'id' => 0,
-                    'user_id' => $user_id,
-                    'monthly_salary' => 3500.00,
-                    'working_days_per_month' => 22,
-                    'daily_rate' => 159.09,
-                    'currency' => 'CAD',
-                    'effective_from' => null,
-                    'created_by' => 0,
-                    'created_at' => null,
-                    'updated_at' => null
+        $this->salary_table = $wpdb->prefix . 'staff_salary_settings';
+        $this->working_days_table = $wpdb->prefix . 'staff_working_days';
+        $this->report_class = new Bassmah_Staff_Reports_Report();
+    }
+
+    /**
+     * Set salary settings for a user
+     *
+     * @param int $user_id
+     * @param array $salary_data
+     * @return bool|WP_Error
+     */
+    public function set_salary_settings($user_id, $salary_data) {
+        global $wpdb;
+
+        if (!Bassmah_Staff_Reports_Roles::can_manage_salary_settings()) {
+            return new WP_Error(
+                'permission_denied',
+                __('You do not have permission to manage salary settings.', 'bassmah-staff-reports'),
+                array('status' => 403)
+            );
+        }
+
+        // Validate required fields
+        $required_fields = array('monthly_salary', 'working_days_per_month', 'effective_from');
+        foreach ($required_fields as $field) {
+            if (!isset($salary_data[$field]) || empty($salary_data[$field])) {
+                return new WP_Error(
+                    'missing_field',
+                    sprintf(__('Missing required field: %s', 'bassmah-staff-reports'), $field),
+                    array('status' => 400)
                 );
             }
-            return $settings;
         }
-        
-        $defaults = array(
-            'monthly_salary' => 3500.00,
-            'working_days_per_month' => 22,
-            'daily_rate' => 159.09,
-            'currency' => 'CAD'
+
+        $settings = array(
+            'user_id' => intval($user_id),
+            'monthly_salary' => floatval($salary_data['monthly_salary']),
+            'working_days_per_month' => intval($salary_data['working_days_per_month']),
+            'currency' => isset($salary_data['currency']) ? $salary_data['currency'] : 'CAD',
+            'effective_from' => $salary_data['effective_from'],
+            'created_by' => get_current_user_id(),
+            'updated_at' => current_time('mysql')
         );
-        
-        return wp_parse_args(get_option('bsr_salary_settings', array()), $defaults);
-    }
-    
-    public static function save_settings($data) {
-        global $wpdb;
-        $table_name = $wpdb->prefix . 'staff_salary_settings';
-        
-        $data['working_days_per_month'] = max(1, min(31, intval($data['working_days_per_month'])));
-        $data['monthly_salary'] = max(0, floatval($data['monthly_salary']));
-        $data['daily_rate'] = round($data['monthly_salary'] / $data['working_days_per_month'], 2);
-        $data['updated_at'] = current_time('mysql');
-        
-        $existing = self::get_settings($data['user_id']);
-        
-        if ($existing['id'] > 0) {
-            return $wpdb->update($table_name, $data, array('user_id' => $data['user_id']));
-        } else {
-            $data['created_at'] = current_time('mysql');
-            $data['created_by'] = get_current_user_id();
-            return $wpdb->insert($table_name, $data);
+
+        $result = $wpdb->insert($this->salary_table, $settings, array('%d', '%f', '%d', '%s', '%s', '%d', '%s'));
+
+        if ($result === false) {
+            return new WP_Error(
+                'db_error',
+                __('Failed to save salary settings.', 'bassmah-staff-reports'),
+                array('status' => 500)
+            );
         }
+
+        return true;
     }
-    
-    public static function calculate_salary($user_id, $month, $year) {
-        $settings = self::get_settings($user_id);
-        $working_days = Basmah_Staff_Reports_Working_Days::get_working_days_count($month, $year);
-        
+
+    /**
+     * Get current salary settings for a user
+     *
+     * @param int $user_id
+     * @return object|null
+     */
+    public function get_salary_settings($user_id) {
         global $wpdb;
-        $table_name = $wpdb->prefix . 'staff_reports';
-        
-        $reports = $wpdb->get_results($wpdb->prepare(
-            "SELECT report_date, status FROM $table_name WHERE user_id = %d AND MONTH(report_date) = %d AND YEAR(report_date) = %d",
+
+        return $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$this->salary_table} 
+             WHERE user_id = %d AND effective_from <= %s 
+             ORDER BY effective_from DESC LIMIT 1",
             $user_id,
-            $month,
-            $year
-        ), ARRAY_A);
-        
-        $approved_days = 0;
-        $rejected_days = 0;
-        $working_day_lookup = array_fill_keys(Basmah_Staff_Reports_Working_Days::get_working_days($month, $year), true);
-        $submitted_working_days = array();
-        
-        foreach ($reports as $report) {
-            if ($report['status'] == 'approved') {
-                $approved_days++;
-            } elseif ($report['status'] == 'rejected') {
-                $rejected_days++;
-            }
+            current_time('Y-m-d')
+        ));
+    }
 
-            if (isset($working_day_lookup[$report['report_date']])) {
-                $submitted_working_days[$report['report_date']] = true;
-            }
+    /**
+     * Get all salary settings for a user
+     *
+     * @param int $user_id
+     * @return array
+     */
+    public function get_all_salary_settings($user_id) {
+        global $wpdb;
+
+        return $wpdb->get_results($wpdb->prepare(
+            "SELECT * FROM {$this->salary_table} 
+             WHERE user_id = %d 
+             ORDER BY effective_from DESC",
+            $user_id
+        ));
+    }
+
+    /**
+     * Calculate monthly salary summary
+     *
+     * @param int $user_id
+     * @param string $month Year-month format (YYYY-MM)
+     * @return array|WP_Error
+     */
+    public function calculate_monthly_salary($user_id, $month = null) {
+        if (!$month) {
+            $month = date('Y-m');
         }
 
-        $submitted_days = count($submitted_working_days);
-        
-        $daily_rate = $settings['daily_rate'];
-        $monthly_salary = $settings['monthly_salary'];
-        
-        $missing_days = max(0, $working_days - $submitted_days);
+        $salary_settings = $this->get_salary_settings($user_id);
+        if (!$salary_settings) {
+            return new WP_Error(
+                'no_salary_settings',
+                __('Salary settings not found for this user.', 'bassmah-staff-reports'),
+                array('status' => 404)
+            );
+        }
+
+        // Get working days for the month
+        $working_days = $this->get_working_days_in_month($month);
+        $total_working_days = count($working_days);
+
+        // Get submitted reports for the month
+        $reports = $this->report_class->get_reports(array(
+            'user_id' => $user_id,
+            'date_from' => $month . '-01',
+            'date_to' => $month . '-31'
+        ));
+
+        $submitted_days = count($reports);
+        $missing_days = $total_working_days - $submitted_days;
+
+        // Calculate deductions
+        $daily_rate = $salary_settings->monthly_salary / $salary_settings->working_days_per_month;
         $total_deduction = $missing_days * $daily_rate;
-        $net_salary = max(0, $monthly_salary - $total_deduction);
-        
+        $net_salary = $salary_settings->monthly_salary - $total_deduction;
+
         return array(
-            'monthly_salary' => $monthly_salary,
-            'working_days' => $working_days,
-            'submitted_days' => $submitted_days,
-            'approved_days' => $approved_days,
-            'rejected_days' => $rejected_days,
-            'missing_days' => $missing_days,
+            'user_id' => $user_id,
+            'month' => $month,
+            'monthly_salary' => $salary_settings->monthly_salary,
             'daily_rate' => $daily_rate,
+            'currency' => $salary_settings->currency,
+            'total_working_days' => $total_working_days,
+            'submitted_days' => $submitted_days,
+            'missing_days' => $missing_days,
             'total_deduction' => $total_deduction,
             'net_salary' => $net_salary,
-            'currency' => $settings['currency']
+            'attendance_percentage' => $total_working_days > 0 ? round(($submitted_days / $total_working_days) * 100, 2) : 0
+        );
+    }
+
+    /**
+     * Get salary summary for multiple users
+     *
+     * @param array $user_ids
+     * @param string $month
+     * @return array
+     */
+    public function get_batch_salary_summary($user_ids, $month = null) {
+        if (!$month) {
+            $month = date('Y-m');
+        }
+
+        $summaries = array();
+        foreach ($user_ids as $user_id) {
+            $summary = $this->calculate_monthly_salary($user_id, $month);
+            if (!is_wp_error($summary)) {
+                $user = get_userdata($user_id);
+                $summary['user_name'] = $user ? $user->display_name : 'Unknown';
+                $summary['user_email'] = $user ? $user->user_email : '';
+                $summary['user_role'] = Bassmah_Staff_Reports_Roles::get_user_role_display($user_id);
+                $summaries[] = $summary;
+            }
+        }
+
+        return $summaries;
+    }
+
+    /**
+     * Get working days in a month
+     *
+     * @param string $month Year-month format (YYYY-MM)
+     * @return array Array of dates that are working days
+     */
+    public function get_working_days_in_month($month) {
+        global $wpdb;
+
+        $start_date = $month . '-01';
+        $end_date = date('Y-m-t', strtotime($start_date));
+
+        // Get all days in the month
+        $working_days = $wpdb->get_col($wpdb->prepare(
+            "SELECT work_date FROM {$this->working_days_table} 
+             WHERE work_date BETWEEN %s AND %s AND is_holiday = 0 
+             ORDER BY work_date",
+            $start_date,
+            $end_date
+        ));
+
+        // If no working days are configured, assume weekdays are working days
+        if (empty($working_days)) {
+            $working_days = $this->generate_default_working_days($month);
+        }
+
+        return $working_days;
+    }
+
+    /**
+     * Generate default working days (weekdays) for a month
+     *
+     * @param string $month
+     * @return array
+     */
+    private function generate_default_working_days($month) {
+        $working_days = array();
+        $start_date = new DateTime($month . '-01');
+        $end_date = new DateTime(date('Y-m-t', strtotime($month . '-01')));
+
+        while ($start_date <= $end_date) {
+            $day_of_week = $start_date->format('N'); // 1 (Monday) to 7 (Sunday)
+            if ($day_of_week <= 5) { // Monday to Friday
+                $working_days[] = $start_date->format('Y-m-d');
+            }
+            $start_date->add(new DateInterval('P1D'));
+        }
+
+        return $working_days;
+    }
+
+    /**
+     * Add working day
+     *
+     * @param array $data
+     * @return bool|WP_Error
+     */
+    public function add_working_day($data) {
+        global $wpdb;
+
+        if (!Bassmah_Staff_Reports_Roles::can_manage_working_days()) {
+            return new WP_Error(
+                'permission_denied',
+                __('You do not have permission to manage working days.', 'bassmah-staff-reports'),
+                array('status' => 403)
+            );
+        }
+
+        $required_fields = array('work_date', 'is_holiday');
+        foreach ($required_fields as $field) {
+            if (!isset($data[$field])) {
+                return new WP_Error(
+                    'missing_field',
+                    sprintf(__('Missing required field: %s', 'bassmah-staff-reports'), $field),
+                    array('status' => 400)
+                );
+            }
+        }
+
+        $working_day = array(
+            'work_date' => $data['work_date'],
+            'is_holiday' => intval($data['is_holiday']),
+            'holiday_name' => isset($data['holiday_name']) ? $data['holiday_name'] : null,
+            'created_by' => get_current_user_id(),
+            'created_at' => current_time('mysql')
+        );
+
+        $result = $wpdb->insert($this->working_days_table, $working_day, array('%s', '%d', '%s', '%d', '%s'));
+
+        if ($result === false) {
+            return new WP_Error(
+                'db_error',
+                __('Failed to add working day.', 'bassmah-staff-reports'),
+                array('status' => 500)
+            );
+        }
+
+        return true;
+    }
+
+    /**
+     * Get working days for a date range
+     *
+     * @param string $date_from
+     * @param string $date_to
+     * @return array
+     */
+    public function get_working_days_range($date_from, $date_to) {
+        global $wpdb;
+
+        return $wpdb->get_results($wpdb->prepare(
+            "SELECT * FROM {$this->working_days_table} 
+             WHERE work_date BETWEEN %s AND %s 
+             ORDER BY work_date",
+            $date_from,
+            $date_to
+        ));
+    }
+
+    /**
+     * Get salary history for a user
+     *
+     * @param int $user_id
+     * @param int $limit
+     * @return array
+     */
+    public function get_salary_history($user_id, $limit = 12) {
+        $history = array();
+        
+        // Get last N months
+        for ($i = 0; $i < $limit; $i++) {
+            $month = date('Y-m', strtotime("-$i months"));
+            $summary = $this->calculate_monthly_salary($user_id, $month);
+            
+            if (!is_wp_error($summary)) {
+                $history[] = $summary;
+            }
+        }
+
+        return $history;
+    }
+
+    /**
+     * Export salary data to CSV
+     *
+     * @param array $user_ids
+     * @param string $month
+     * @return string CSV content
+     */
+    public function export_salary_csv($user_ids, $month = null) {
+        if (!$month) {
+            $month = date('Y-m');
+        }
+
+        $summaries = $this->get_batch_salary_summary($user_ids, $month);
+
+        $csv = "User Name,Email,Role,Monthly Salary,Daily Rate,Working Days,Submitted Days,Missing Days,Deduction,Net Salary,Attendance %\n";
+
+        foreach ($summaries as $summary) {
+            $csv .= sprintf(
+                "%s,%s,%s,%.2f,%.2f,%d,%d,%d,%.2f,%.2f,%.2f%%\n",
+                $summary['user_name'],
+                $summary['user_email'],
+                $summary['user_role'],
+                $summary['monthly_salary'],
+                $summary['daily_rate'],
+                $summary['total_working_days'],
+                $summary['submitted_days'],
+                $summary['missing_days'],
+                $summary['total_deduction'],
+                $summary['net_salary'],
+                $summary['attendance_percentage']
+            );
+        }
+
+        return $csv;
+    }
+
+    /**
+     * Get dashboard statistics for a user
+     *
+     * @param int $user_id
+     * @return array
+     */
+    public function get_dashboard_stats($user_id) {
+        $current_month = date('Y-m');
+        $salary_summary = $this->calculate_monthly_salary($user_id, $current_month);
+        
+        if (is_wp_error($salary_summary)) {
+            return array(
+                'has_salary_settings' => false,
+                'message' => $salary_summary->get_error_message()
+            );
+        }
+
+        $today_report = $this->report_class->get_today_report();
+        $has_submitted_today = !empty($today_report);
+
+        return array(
+            'has_salary_settings' => true,
+            'current_month' => $current_month,
+            'monthly_salary' => $salary_summary['monthly_salary'],
+            'daily_rate' => $salary_summary['daily_rate'],
+            'currency' => $salary_summary['currency'],
+            'total_working_days' => $salary_summary['total_working_days'],
+            'submitted_days' => $salary_summary['submitted_days'],
+            'missing_days' => $salary_summary['missing_days'],
+            'total_deduction' => $salary_summary['total_deduction'],
+            'net_salary' => $salary_summary['net_salary'],
+            'attendance_percentage' => $salary_summary['attendance_percentage'],
+            'has_submitted_today' => $has_submitted_today,
+            'can_submit_today' => !$has_submitted_today
         );
     }
 }

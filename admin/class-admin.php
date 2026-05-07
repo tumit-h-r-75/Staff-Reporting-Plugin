@@ -1,404 +1,368 @@
 <?php
-class Basmah_Staff_Reports_Admin {
-    public function __construct() {
-        add_action('admin_menu', array($this, 'add_admin_menu'));
-        add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_assets'));
-        add_action('admin_init', array($this, 'handle_admin_actions'));
+/**
+ * The admin-specific functionality of the plugin.
+ *
+ * @since      1.0.0
+ * @package    Bassmah_Staff_Reports
+ * @author     Tumit <tumit@bassmah.ca>
+ */
+class Bassmah_Staff_Reports_Admin {
+
+    /**
+     * The ID of this plugin.
+     *
+     * @since    1.0.0
+     * @access   private
+     * @var      string    $plugin_name    The ID of this plugin.
+     */
+    private $plugin_name;
+
+    /**
+     * The version of this plugin.
+     *
+     * @since    1.0.0
+     * @access   private
+     * @var      string    $version    The current version of this plugin.
+     */
+    private $version;
+
+    /**
+     * Initialize the class and set its properties.
+     *
+     * @since    1.0.0
+     * @param    string    $plugin_name       The name of this plugin.
+     * @param    string    $version    The version of this plugin.
+     */
+    public function __construct($plugin_name, $version) {
+        $this->plugin_name = $plugin_name;
+        $this->version = $version;
     }
-    
-    public function add_admin_menu() {
+
+    /**
+     * Register the stylesheets for the admin area.
+     *
+     * @since    1.0.0
+     */
+    public function enqueue_styles() {
+        wp_enqueue_style(
+            $this->plugin_name,
+            plugin_dir_url(__FILE__) . 'css/admin-style.css',
+            array(),
+            $this->version,
+            'all'
+        );
+
+        // Add date picker CSS
+        wp_enqueue_style('jquery-ui-datepicker');
+    }
+
+    /**
+     * Register the JavaScript for the admin area.
+     *
+     * @since    1.0.0
+     */
+    public function enqueue_scripts() {
+        wp_enqueue_script(
+            $this->plugin_name,
+            plugin_dir_url(__FILE__) . 'js/admin-scripts.js',
+            array('jquery', 'jquery-ui-datepicker'),
+            $this->version,
+            false
+        );
+
+        // Localize script
+        wp_localize_script($this->plugin_name, 'bassmah_admin', array(
+            'ajax_url' => admin_url('admin-ajax.php'),
+            'nonce' => wp_create_nonce('bassmah_admin_nonce'),
+            'strings' => array(
+                'confirm_delete' => __('Are you sure you want to delete this item?', 'bassmah-staff-reports'),
+                'no_reports_found' => __('No reports found for the selected criteria.', 'bassmah-staff-reports'),
+                'loading' => __('Loading...', 'bassmah-staff-reports')
+            )
+        ));
+    }
+
+    /**
+     * Add plugin admin menu items
+     *
+     * @since    1.0.0
+     */
+    public function add_plugin_admin_menu() {
+        // Main menu
         add_menu_page(
-            'Basmah Staff Reports',
-            'Staff Reports',
-            'basmah_view_all_reports',
-            'bassmah-staff-reports',
-            array($this, 'render_dashboard'),
-            'dashicons-chart-bar',
+            __('Bassmah Reports', 'bassmah-staff-reports'),
+            __('Bassmah Reports', 'bassmah-staff-reports'),
+            'bassmah_view_all_reports',
+            'bassmah-reports',
+            array($this, 'display_dashboard_page'),
+            'dashicons-clipboard',
             25
         );
-        
-        add_submenu_page(
-            'bassmah-staff-reports',
-            'Dashboard',
-            'Dashboard',
-            'basmah_view_all_reports',
-            'bassmah-staff-reports',
-            array($this, 'render_dashboard')
-        );
-        
-        add_submenu_page(
-            'bassmah-staff-reports',
-            'All Reports',
-            'All Reports',
-            'basmah_view_all_reports',
-            'bsr-all-reports',
-            array($this, 'render_all_reports')
-        );
-        
-        add_submenu_page(
-            'bassmah-staff-reports',
-            'Single Report',
-            'Single Report',
-            'basmah_edit_reports',
-            'bsr-single-report',
-            array($this, 'render_single_report')
-        );
-        
-        add_submenu_page(
-            'bassmah-staff-reports',
-            'Staff List',
-            'Staff List',
-            'basmah_manage_staff',
-            'bsr-staff-list',
-            array($this, 'render_staff_list')
-        );
-        
-        add_submenu_page(
-            'bassmah-staff-reports',
-            'Salary Settings',
-            'Salary Settings',
-            'basmah_manage_salaries',
-            'bsr-salary-settings',
-            array($this, 'render_salary_settings')
-        );
-        
-        add_submenu_page(
-            'bassmah-staff-reports',
-            'Working Days & Holidays',
-            'Working Days & Holidays',
-            'basmah_manage_working_days',
-            'bsr-working-days',
-            array($this, 'render_working_days')
-        );
-    }
-    
-    public function enqueue_admin_assets($hook) {
-        wp_enqueue_style('bsr-admin-css', BASMAH_STAFF_REPORTS_PLUGIN_URL . 'admin/assets/admin.css');
-        wp_enqueue_script('bsr-admin-js', BASMAH_STAFF_REPORTS_PLUGIN_URL . 'admin/assets/admin.js', array('jquery'), null, true);
-    }
-    
-    public function handle_admin_actions() {
-        if (!current_user_can('basmah_view_all_reports') && !current_user_can('manage_options')) {
-            return;
-        }
-        
-        if (isset($_POST['bsr_save_comment'])) {
-            $this->handle_save_comment();
-        }
-        
-        if (isset($_POST['bsr_save_salary']) && current_user_can('basmah_manage_salaries')) {
-            $this->handle_save_salary();
-        }
-        
-        if (isset($_POST['bsr_add_holiday']) && current_user_can('basmah_manage_working_days')) {
-            $this->handle_add_holiday();
-        }
-        
-        if (isset($_GET['bsr_delete_holiday']) && current_user_can('basmah_manage_working_days')) {
-            $this->handle_delete_holiday();
-        }
-        
-        if (isset($_POST['bsr_approve_report']) && current_user_can('basmah_edit_reports')) {
-            $this->handle_approve_report();
-        }
-        
-        if (isset($_POST['bsr_reject_report']) && current_user_can('basmah_edit_reports')) {
-            $this->handle_reject_report();
-        }
-        
-        if (isset($_GET['bsr_export']) && current_user_can('basmah_export_reports')) {
-            $this->handle_export();
-        }
-        
-        if (isset($_GET['bsr_delete_report']) && current_user_can('basmah_edit_reports')) {
-            $this->handle_delete_report();
-        }
-        
-        if (isset($_POST['bsr_update_report']) && current_user_can('basmah_edit_reports')) {
-            $this->handle_update_report();
-        }
-    }
-    
-    private function handle_save_comment() {
-        if (!isset($_POST['bsr_comment_nonce']) || !wp_verify_nonce($_POST['bsr_comment_nonce'], 'bsr_save_comment')) {
-            return;
-        }
-        
-        $report_id = intval($_POST['report_id']);
-        $comment = sanitize_textarea_field($_POST['manager_comment']);
-        
-        Basmah_Staff_Reports_Reports::update_report($report_id, array(
-            'manager_comment' => $comment
-        ));
-        
-        wp_redirect(add_query_arg('comment_saved', '1', admin_url('admin.php?page=bsr-single-report&report_id=' . $report_id)));
-        exit;
-    }
-    
-    private function handle_approve_report() {
-        if (!isset($_POST['bsr_approve_nonce']) || !wp_verify_nonce($_POST['bsr_approve_nonce'], 'bsr_approve_report')) {
-            return;
-        }
-        
-        $report_id = intval($_POST['report_id']);
-        
-        Basmah_Staff_Reports_Reports::update_report($report_id, array(
-            'status' => 'approved'
-        ));
-        
-        wp_redirect(add_query_arg('report_approved', '1', admin_url('admin.php?page=bsr-single-report&report_id=' . $report_id)));
-        exit;
-    }
-    
-    private function handle_reject_report() {
-        if (!isset($_POST['bsr_reject_nonce']) || !wp_verify_nonce($_POST['bsr_reject_nonce'], 'bsr_reject_report')) {
-            return;
-        }
-        
-        $report_id = intval($_POST['report_id']);
-        $comment = isset($_POST['manager_comment']) ? sanitize_textarea_field($_POST['manager_comment']) : '';
-        
-        if (empty($comment)) {
-            wp_redirect(add_query_arg('comment_required', '1', admin_url('admin.php?page=bsr-single-report&report_id=' . $report_id)));
-            exit;
-        }
-        
-        Basmah_Staff_Reports_Reports::update_report($report_id, array(
-            'status' => 'rejected',
-            'manager_comment' => $comment
-        ));
-        
-        wp_redirect(add_query_arg('report_rejected', '1', admin_url('admin.php?page=bsr-single-report&report_id=' . $report_id)));
-        exit;
-    }
-    
-    private function handle_save_salary() {
-        if (!isset($_POST['bsr_salary_nonce']) || !wp_verify_nonce($_POST['bsr_salary_nonce'], 'bsr_save_salary')) {
-            return;
-        }
-        
-        $user_id = intval($_POST['user_id']);
-        
-        Basmah_Staff_Reports_Salary::save_settings(array(
-            'user_id' => $user_id,
-            'monthly_salary' => floatval($_POST['monthly_salary']),
-            'working_days_per_month' => intval($_POST['working_days_per_month']),
-            'currency' => sanitize_text_field($_POST['currency'])
-        ));
-        
-        wp_redirect(add_query_arg('salary_saved', '1', admin_url('admin.php?page=bsr-salary-settings')));
-        exit;
-    }
-    
-    private function handle_add_holiday() {
-        if (!isset($_POST['bsr_holiday_nonce']) || !wp_verify_nonce($_POST['bsr_holiday_nonce'], 'bsr_add_holiday')) {
-            return;
-        }
-        
-        Basmah_Staff_Reports_Working_Days::add_day(array(
-            'work_date' => sanitize_text_field($_POST['work_date']),
-            'is_holiday' => 1,
-            'holiday_name' => sanitize_text_field($_POST['holiday_name'])
-        ));
-        
-        wp_redirect(add_query_arg('holiday_added', '1', admin_url('admin.php?page=bsr-working-days')));
-        exit;
-    }
-    
-    private function handle_delete_holiday() {
-        check_admin_referer('bsr_delete_holiday');
 
-        $id = intval($_GET['bsr_delete_holiday']);
-        Basmah_Staff_Reports_Working_Days::delete_day($id);
-        
-        wp_redirect(add_query_arg('holiday_deleted', '1', admin_url('admin.php?page=bsr-working-days')));
-        exit;
+        // Dashboard submenu
+        add_submenu_page(
+            'bassmah-reports',
+            __('Dashboard', 'bassmah-staff-reports'),
+            __('Dashboard', 'bassmah-staff-reports'),
+            'bassmah_view_all_reports',
+            'bassmah-reports',
+            array($this, 'display_dashboard_page')
+        );
+
+        // All Reports submenu
+        add_submenu_page(
+            'bassmah-reports',
+            __('All Reports', 'bassmah-staff-reports'),
+            __('All Reports', 'bassmah-staff-reports'),
+            'bassmah_view_all_reports',
+            'bassmah-all-reports',
+            array($this, 'display_all_reports_page')
+        );
+
+        // Salary Settings submenu
+        add_submenu_page(
+            'bassmah-reports',
+            __('Salary Settings', 'bassmah-staff-reports'),
+            __('Salary Settings', 'bassmah-staff-reports'),
+            'bassmah_manage_salary_settings',
+            'bassmah-salary-settings',
+            array($this, 'display_salary_settings_page')
+        );
+
+        // Working Days submenu
+        add_submenu_page(
+            'bassmah-reports',
+            __('Working Days', 'bassmah-staff-reports'),
+            __('Working Days', 'bassmah-staff-reports'),
+            'bassmah_manage_working_days',
+            'bassmah-working-days',
+            array($this, 'display_working_days_page')
+        );
+
+        // Staff Management submenu
+        add_submenu_page(
+            'bassmah-reports',
+            __('Staff Management', 'bassmah-staff-reports'),
+            __('Staff Management', 'bassmah-staff-reports'),
+            'bassmah_manage_staff',
+            'bassmah-staff',
+            array($this, 'display_staff_management_page')
+        );
+
+        // Settings submenu
+        add_submenu_page(
+            'bassmah-reports',
+            __('Settings', 'bassmah-staff-reports'),
+            __('Settings', 'bassmah-staff-reports'),
+            'manage_options',
+            'bassmah-settings',
+            array($this, 'display_settings_page')
+        );
+
+        // Add "My Reports" for staff users
+        if (Bassmah_Staff_Reports_Roles::is_staff() && !Bassmah_Staff_Reports_Roles::is_manager()) {
+            add_submenu_page(
+                'bassmah-reports',
+                __('My Reports', 'bassmah-staff-reports'),
+                __('My Reports', 'bassmah-staff-reports'),
+                'bassmah_view_own_reports',
+                'bassmah-my-reports',
+                array($this, 'display_my_reports_page')
+            );
+        }
     }
-    
-    private function handle_export() {
-        $args = array();
+
+    /**
+     * Register plugin settings
+     *
+     * @since    1.0.0
+     */
+    public function register_settings() {
+        // General settings
+        register_setting('bassmah_settings', 'bassmah_task_categories');
+        register_setting('bassmah_settings', 'bassmah_task_statuses');
+        register_setting('bassmah_settings', 'bassmah_default_currency');
+        register_setting('bassmah_settings', 'bassmah_default_working_days');
         
-        if (isset($_GET['user_id']) && !empty($_GET['user_id'])) {
-            $args['user_id'] = intval($_GET['user_id']);
-        }
-        
-        if (isset($_GET['date_from']) && !empty($_GET['date_from'])) {
-            $args['date_from'] = sanitize_text_field($_GET['date_from']);
-        }
-        
-        if (isset($_GET['date_to']) && !empty($_GET['date_to'])) {
-            $args['date_to'] = sanitize_text_field($_GET['date_to']);
+        // Email notification settings
+        register_setting('bassmah_settings', 'bassmah_email_notifications');
+        register_setting('bassmah_settings', 'bassmah_reminder_time');
+    }
+
+    /**
+     * Display dashboard page
+     *
+     * @since    1.0.0
+     */
+    public function display_dashboard_page() {
+        if (!current_user_can('bassmah_view_all_reports')) {
+            wp_die(__('You do not have sufficient permissions to access this page.', 'bassmah-staff-reports'));
         }
 
-        if (isset($_GET['role']) && !empty($_GET['role'])) {
-            $role = sanitize_text_field($_GET['role']);
-            if (in_array($role, array('basmah_staff', 'basmah_manager'), true)) {
-                $args['role'] = $role;
-            }
+        require_once plugin_dir_path(__FILE__) . 'views/dashboard.php';
+    }
+
+    /**
+     * Display all reports page
+     *
+     * @since    1.0.0
+     */
+    public function display_all_reports_page() {
+        if (!current_user_can('bassmah_view_all_reports')) {
+            wp_die(__('You do not have sufficient permissions to access this page.', 'bassmah-staff-reports'));
         }
-        
-        $reports = Basmah_Staff_Reports_Reports::get_reports($args);
-        
-        header('Content-Type: text/csv');
-        header('Content-Disposition: attachment; filename=staff-reports-' . date('Y-m-d') . '.csv');
-        
-        $output = fopen('php://output', 'w');
-        fputcsv($output, array('ID', 'Employee Name', 'Date', 'Status', 'Tasks', 'Manager Comment', 'Submitted At'));
-        
+
+        require_once plugin_dir_path(__FILE__) . 'views/all-reports.php';
+    }
+
+    /**
+     * Display salary settings page
+     *
+     * @since    1.0.0
+     */
+    public function display_salary_settings_page() {
+        if (!current_user_can('bassmah_manage_salary_settings')) {
+            wp_die(__('You do not have sufficient permissions to access this page.', 'bassmah-staff-reports'));
+        }
+
+        require_once plugin_dir_path(__FILE__) . 'views/salary-settings.php';
+    }
+
+    /**
+     * Display working days page
+     *
+     * @since    1.0.0
+     */
+    public function display_working_days_page() {
+        if (!current_user_can('bassmah_manage_working_days')) {
+            wp_die(__('You do not have sufficient permissions to access this page.', 'bassmah-staff-reports'));
+        }
+
+        require_once plugin_dir_path(__FILE__) . 'views/working-days.php';
+    }
+
+    /**
+     * Display staff management page
+     *
+     * @since    1.0.0
+     */
+    public function display_staff_management_page() {
+        if (!current_user_can('bassmah_manage_staff')) {
+            wp_die(__('You do not have sufficient permissions to access this page.', 'bassmah-staff-reports'));
+        }
+
+        require_once plugin_dir_path(__FILE__) . 'views/staff-management.php';
+    }
+
+    /**
+     * Display settings page
+     *
+     * @since    1.0.0
+     */
+    public function display_settings_page() {
+        if (!current_user_can('manage_options')) {
+            wp_die(__('You do not have sufficient permissions to access this page.', 'bassmah-staff-reports'));
+        }
+
+        require_once plugin_dir_path(__FILE__) . 'views/settings.php';
+    }
+
+    /**
+     * Display my reports page (for staff)
+     *
+     * @since    1.0.0
+     */
+    public function display_my_reports_page() {
+        if (!current_user_can('bassmah_view_own_reports')) {
+            wp_die(__('You do not have sufficient permissions to access this page.', 'bassmah-staff-reports'));
+        }
+
+        require_once plugin_dir_path(__FILE__) . 'views/my-reports.php';
+    }
+
+    /**
+     * Handle AJAX requests
+     *
+     * @since    1.0.0
+     */
+    public function handle_ajax_requests() {
+        check_ajax_referer('bassmah_admin_nonce', 'nonce');
+
+        $action = $_POST['action_type'] ?? '';
+
+        switch ($action) {
+            case 'export_reports':
+                $this->export_reports();
+                break;
+            case 'export_salary':
+                $this->export_salary();
+                break;
+            default:
+                wp_send_json_error(__('Invalid action', 'bassmah-staff-reports'));
+        }
+
+        wp_die();
+    }
+
+    /**
+     * Export reports to CSV
+     *
+     * @since    1.0.0
+     */
+    private function export_reports() {
+        if (!current_user_can('bassmah_export_reports')) {
+            wp_send_json_error(__('You do not have permission to export reports.', 'bassmah-staff-reports'));
+        }
+
+        $filters = $_POST['filters'] ?? array();
+        $report_class = new Bassmah_Staff_Reports_Report();
+        $reports = $report_class->get_reports($filters);
+
+        $csv = "Date,Staff Name,Role,Status,Tasks,Comment\n";
+
         foreach ($reports as $report) {
-            $tasks = json_decode($report['tasks_json'], true);
-            $task_summary = '';
+            $user = get_userdata($report->user_id);
+            $staff_name = $user ? $user->display_name : 'Unknown';
+            $role = Bassmah_Staff_Reports_Roles::get_user_role_display($report->user_id);
             
-            if ($tasks && is_array($tasks)) {
-                foreach ($tasks as $task) {
-                    $task_summary .= $task['task_category'] . ': ' . $task['task_description'] . ' | ';
+            $tasks = array();
+            if ($report->tasks) {
+                foreach ($report->tasks as $task) {
+                    $tasks[] = $task['task_description'] ?? '';
                 }
-                $task_summary = rtrim($task_summary, ' | ');
             }
-            
-            fputcsv($output, array(
-                $report['id'],
-                $report['display_name'],
-                $report['report_date'],
-                $report['status'],
-                $task_summary,
-                $report['manager_comment'],
-                $report['created_at']
-            ));
-        }
-        
-        fclose($output);
-        exit;
-    }
-    
-    private function handle_delete_report() {
-        check_admin_referer('bsr_delete_report');
+            $tasks_str = implode('; ', $tasks);
 
-        $report_id = intval($_GET['bsr_delete_report']);
-        Basmah_Staff_Reports_Reports::delete_report($report_id);
-        wp_redirect(add_query_arg('report_deleted', '1', admin_url('admin.php?page=bsr-all-reports')));
-        exit;
-    }
-    
-    private function handle_update_report() {
-        if (!isset($_POST['bsr_update_nonce']) || !wp_verify_nonce($_POST['bsr_update_nonce'], 'bsr_update_report')) {
-            return;
-        }
-        
-        $report_id = intval($_POST['report_id']);
-        $tasks_json = isset($_POST['tasks_json']) ? $_POST['tasks_json'] : '';
-        
-        $data = array();
-        if (!empty($tasks_json)) {
-            $data['tasks_json'] = $tasks_json;
-        }
-        
-        Basmah_Staff_Reports_Reports::update_report($report_id, $data);
-        wp_redirect(add_query_arg('report_updated', '1', admin_url('admin.php?page=bsr-single-report&report_id=' . $report_id)));
-        exit;
-    }
-    
-    public function render_dashboard() {
-        global $wpdb;
-        $table_name = $wpdb->prefix . 'staff_reports';
-        $users_table = $wpdb->prefix . 'users';
-        $today = current_time('Y-m-d');
-        $current_month = date('m');
-        $current_year = date('Y');
-        
-        $total_reports = $wpdb->get_var("SELECT COUNT(*) FROM $table_name");
-        $today_reports = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM $table_name WHERE report_date = %s", $today));
-        $monthly_reports = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM $table_name WHERE MONTH(report_date) = %d AND YEAR(report_date) = %d", $current_month, $current_year));
-        $pending_reports = $wpdb->get_var("SELECT COUNT(*) FROM $table_name WHERE status = 'pending'");
-        
-        $recent_reports = $wpdb->get_results("
-            SELECT r.*, u.display_name
-            FROM $table_name r
-            JOIN $users_table u ON r.user_id = u.ID
-            ORDER BY r.created_at DESC
-            LIMIT 5
-        ", ARRAY_A);
-        
-        require_once BASMAH_STAFF_REPORTS_PLUGIN_DIR . 'admin/views/dashboard.php';
-    }
-    
-    public function render_all_reports() {
-        $args = array();
-        
-        if (isset($_GET['user_id']) && !empty($_GET['user_id'])) {
-            $args['user_id'] = intval($_GET['user_id']);
-        }
-        
-        if (isset($_GET['status']) && !empty($_GET['status'])) {
-            $args['status'] = sanitize_text_field($_GET['status']);
-        }
-        
-        if (isset($_GET['date_from']) && !empty($_GET['date_from'])) {
-            $args['date_from'] = sanitize_text_field($_GET['date_from']);
-        }
-        
-        if (isset($_GET['date_to']) && !empty($_GET['date_to'])) {
-            $args['date_to'] = sanitize_text_field($_GET['date_to']);
+            $csv .= sprintf(
+                "%s,%s,%s,%s,\"%s\",\"%s\"\n",
+                $report->report_date,
+                $staff_name,
+                $role,
+                $report->status,
+                $tasks_str,
+                $report->manager_comment
+            );
         }
 
-        if (isset($_GET['role']) && !empty($_GET['role'])) {
-            $role = sanitize_text_field($_GET['role']);
-            if (in_array($role, array('basmah_staff', 'basmah_manager'), true)) {
-                $args['role'] = $role;
-            }
-        }
-        
-        $reports = Basmah_Staff_Reports_Reports::get_reports($args);
-        $staff_users = get_users(array('role__in' => array('basmah_staff', 'basmah_manager')));
-        
-        require_once BASMAH_STAFF_REPORTS_PLUGIN_DIR . 'admin/views/all-reports.php';
+        wp_send_json_success(array('csv' => $csv));
     }
-    
-    public function render_single_report() {
-        if (!isset($_GET['report_id'])) {
-            echo '<div class="wrap"><h1>Report Details</h1><p>No report ID provided.</p></div>';
-            return;
+
+    /**
+     * Export salary data to CSV
+     *
+     * @since    1.0.0
+     */
+    private function export_salary() {
+        if (!current_user_can('bassmah_view_all_salary')) {
+            wp_send_json_error(__('You do not have permission to export salary data.', 'bassmah-staff-reports'));
         }
-        
-        $report_id = intval($_GET['report_id']);
-        $report = Basmah_Staff_Reports_Reports::get_report($report_id);
-        
-        if (!$report) {
-            echo '<div class="wrap"><h1>Report Details</h1><p>Report not found.</p></div>';
-            return;
-        }
-        
-        $current_user = wp_get_current_user();
-        $can_manage = current_user_can('manage_options') || current_user_can('basmah_view_all_reports');
-        
-        if (!$can_manage && $report['user_id'] != $current_user->ID) {
-            echo '<div class="wrap"><h1>Report Details</h1><p>You do not have permission to view this report.</p></div>';
-            return;
-        }
-        
-        require_once BASMAH_STAFF_REPORTS_PLUGIN_DIR . 'admin/views/single-report.php';
-    }
-    
-    public function render_salary_settings() {
-        $staff_users = get_users(array('role__in' => array('basmah_staff', 'basmah_manager')));
-        require_once BASMAH_STAFF_REPORTS_PLUGIN_DIR . 'admin/views/salary-settings.php';
-    }
-    
-    public function render_working_days() {
-        $current_month = isset($_GET['month']) ? intval($_GET['month']) : date('m');
-        $current_year = isset($_GET['year']) ? intval($_GET['year']) : date('Y');
-        
-        $days = Basmah_Staff_Reports_Working_Days::get_all_days($current_month, $current_year);
-        require_once BASMAH_STAFF_REPORTS_PLUGIN_DIR . 'admin/views/working-days.php';
-    }
-    
-    public function render_staff_list() {
-        $staff_users = get_users(array(
-            'role__in' => array('basmah_staff', 'basmah_manager'),
-            'orderby' => 'display_name',
-            'order' => 'ASC'
-        ));
-        
-        require_once BASMAH_STAFF_REPORTS_PLUGIN_DIR . 'admin/views/staff-list.php';
+
+        $month = $_POST['month'] ?? date('Y-m');
+        $user_ids = $_POST['user_ids'] ?? array();
+
+        $salary_class = new Bassmah_Staff_Reports_Salary();
+        $csv = $salary_class->export_salary_csv($user_ids, $month);
+
+        wp_send_json_success(array('csv' => $csv));
     }
 }

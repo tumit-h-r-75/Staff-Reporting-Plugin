@@ -1,82 +1,256 @@
-<div class="wrap">
-    <h1>Basmah Staff Reports Dashboard</h1>
+<?php
+/**
+ * Admin Dashboard View
+ *
+ * @package    Bassmah_Staff_Reports
+ * @author     Tumit <tumit@bassmah.ca>
+ */
+
+// Security check
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+$report_class = new Bassmah_Staff_Reports_Report();
+$salary_class = new Bassmah_Staff_Reports_Salary();
+
+// Get current month statistics
+$current_month = date('Y-m');
+$statistics = $report_class->get_statistics(array(
+    'date_from' => $current_month . '-01',
+    'date_to' => $current_month . '-31'
+));
+
+// Get staff users
+$staff_users = Bassmah_Staff_Reports_Roles::get_staff_users();
+
+// Get recent reports
+$recent_reports = $report_class->get_reports(array(
+    'limit' => 10,
+    'orderby' => 'submission_time',
+    'order' => 'DESC'
+));
+
+// Get missing reports for today
+$today = current_time('Y-m-d');
+$missing_reports = array();
+
+foreach ($staff_users as $staff) {
+    $today_report = $report_class->get_report_by_date($staff->ID, $today);
+    if (!$today_report) {
+        $missing_reports[] = $staff;
+    }
+}
+?>
+
+<div class="wrap bassmah-admin">
+    <h1><?php _e('Bassmah Staff Reports Dashboard', 'bassmah-staff-reports'); ?></h1>
     
-    <?php
-    global $wpdb;
-    $table_name = $wpdb->prefix . 'staff_reports';
-    $users_table = $wpdb->prefix . 'users';
-    $today = current_time('Y-m-d');
-    $current_month = date('m');
-    $current_year = date('Y');
-    
-    $total_reports = $wpdb->get_var("SELECT COUNT(*) FROM $table_name");
-    $today_reports = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM $table_name WHERE report_date = %s", $today));
-    $monthly_reports = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM $table_name WHERE MONTH(report_date) = %d AND YEAR(report_date) = %d", $current_month, $current_year));
-    $pending_reports = $wpdb->get_var("SELECT COUNT(*) FROM $table_name WHERE status = 'pending'");
-    
-    $recent_reports = $wpdb->get_results("
-        SELECT r.*, u.display_name
-        FROM $table_name r
-        JOIN $users_table u ON r.user_id = u.ID
-        ORDER BY r.created_at DESC
-        LIMIT 5
-    ", ARRAY_A);
-    ?>
-    
-    <div class="bsr-admin-container">
-        <div style="display: flex; gap: 24px; margin: 24px 0; flex-wrap: wrap;">
-            <div style="flex: 1; min-width: 220px; background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%); padding: 32px; border-radius: 16px; box-shadow: 0 4px 16px rgba(66, 153, 225, 0.3); text-align: center;">
-                <div style="font-size: 3rem; font-weight: 700; color: #fff;"><?php echo esc_html($total_reports); ?></div>
-                <div style="font-size: 1.1rem; color: rgba(255,255,255,0.95); margin-top: 12px; font-weight: 600;">Total Reports</div>
-            </div>
-            
-            <div style="flex: 1; min-width: 220px; background: linear-gradient(135deg, #48bb78 0%, #38a169 100%); padding: 32px; border-radius: 16px; box-shadow: 0 4px 16px rgba(72, 187, 120, 0.3); text-align: center;">
-                <div style="font-size: 3rem; font-weight: 700; color: #fff;"><?php echo esc_html($today_reports); ?></div>
-                <div style="font-size: 1.1rem; color: rgba(255,255,255,0.95); margin-top: 12px; font-weight: 600;">Today's Reports</div>
-            </div>
-            
-            <div style="flex: 1; min-width: 220px; background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%); padding: 32px; border-radius: 16px; box-shadow: 0 4px 16px rgba(237, 137, 54, 0.3); text-align: center;">
-                <div style="font-size: 3rem; font-weight: 700; color: #fff;"><?php echo esc_html($monthly_reports); ?></div>
-                <div style="font-size: 1.1rem; color: rgba(255,255,255,0.95); margin-top: 12px; font-weight: 600;">This Month</div>
-            </div>
-            
-            <div style="flex: 1; min-width: 220px; background: linear-gradient(135deg, #ed64a6 0%, #d53f8c 100%); padding: 32px; border-radius: 16px; box-shadow: 0 4px 16px rgba(237, 100, 166, 0.3); text-align: center;">
-                <div style="font-size: 3rem; font-weight: 700; color: #fff;"><?php echo esc_html($pending_reports); ?></div>
-                <div style="font-size: 1.1rem; color: rgba(255,255,255,0.95); margin-top: 12px; font-weight: 600;">Pending Review</div>
-            </div>
+    <div class="bassmah-dashboard">
+        <div class="bassmah-stat-card">
+            <h3><?php _e('Total Reports This Month', 'bassmah-staff-reports'); ?></h3>
+            <p class="bassmah-stat-number bassmah-stat-total-reports"><?php echo $statistics['total_reports']; ?></p>
+            <p class="bassmah-stat-label"><?php echo date_i18n('F Y'); ?></p>
         </div>
         
-        <div class="report-info-card">
-            <h2 style="margin-top: 0; margin-bottom: 24px; font-size: 1.5rem; color: #1a202c; border-bottom: 2px solid #e2e8f0; padding-bottom: 16px; font-weight: 700;">Recent Reports</h2>
+        <div class="bassmah-stat-card">
+            <h3><?php _e('Active Staff', 'bassmah-staff-reports'); ?></h3>
+            <p class="bassmah-stat-number bassmah-stat-active-staff"><?php echo count($staff_users); ?></p>
+            <p class="bassmah-stat-label"><?php _e('Total staff members', 'bassmah-staff-reports'); ?></p>
+        </div>
+        
+        <div class="bassmah-stat-card">
+            <h3><?php _e('Submitted Today', 'bassmah-staff-reports'); ?></h3>
+            <p class="bassmah-stat-number bassmah-stat-submitted-today"><?php echo $statistics['submitted_reports']; ?></p>
+            <p class="bassmah-stat-label"><?php _e('Reports submitted today', 'bassmah-staff-reports'); ?></p>
+        </div>
+        
+        <div class="bassmah-stat-card">
+            <h3><?php _e('Missing Today', 'bassmah-staff-reports'); ?></h3>
+            <p class="bassmah-stat-number bassmah-stat-missing-today"><?php echo count($missing_reports); ?></p>
+            <p class="bassmah-stat-label"><?php _e('Staff who haven\'t submitted', 'bassmah-staff-reports'); ?></p>
+        </div>
+    </div>
+
+    <?php if (!empty($missing_reports)): ?>
+    <div class="bassmah-notice bassmah-notice-warning">
+        <h3><?php _e('Missing Reports Today', 'bassmah-staff-reports'); ?></h3>
+        <p><?php _e('The following staff members have not submitted their reports today:', 'bassmah-staff-reports'); ?></p>
+        <ul>
+            <?php foreach ($missing_reports as $staff): ?>
+                <li><?php echo esc_html($staff->display_name); ?> (<?php echo esc_html($staff->user_email); ?>)</li>
+            <?php endforeach; ?>
+        </ul>
+    </div>
+    <?php endif; ?>
+
+    <div class="bassmah-dashboard-sections">
+        <div class="bassmah-section">
+            <h2><?php _e('Recent Reports', 'bassmah-staff-reports'); ?></h2>
             
-            <?php if (empty($recent_reports)): ?>
-                <p style="color: #4a5568; font-size: 1.1rem; padding: 20px 0;">No reports found.</p>
-            <?php else: ?>
-                <table class="wp-list-table widefat fixed striped">
+            <?php if (!empty($recent_reports)): ?>
+                <table class="wp-list-table widefat fixed striped bassmah-table">
                     <thead>
                         <tr>
-                            <th style="font-weight: 700;">Employee</th>
-                            <th style="font-weight: 700;">Date</th>
-                            <th style="font-weight: 700;">Status</th>
-                            <th style="font-weight: 700;">Submitted</th>
+                            <th><?php _e('Staff Name', 'bassmah-staff-reports'); ?></th>
+                            <th><?php _e('Date', 'bassmah-staff-reports'); ?></th>
+                            <th><?php _e('Status', 'bassmah-staff-reports'); ?></th>
+                            <th><?php _e('Tasks', 'bassmah-staff-reports'); ?></th>
+                            <th><?php _e('Actions', 'bassmah-staff-reports'); ?></th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php foreach ($recent_reports as $report): ?>
+                            <?php 
+                            $user = get_userdata($report->user_id);
+                            $tasks = json_decode($report->tasks_json, true);
+                            $task_count = count($tasks);
+                            ?>
                             <tr>
-                                <td><strong><?php echo esc_html($report['display_name']); ?></strong></td>
-                                <td><?php echo esc_html(date('F j, Y', strtotime($report['report_date']))); ?></td>
+                                <td><?php echo esc_html($user ? $user->display_name : 'Unknown'); ?></td>
+                                <td><?php echo esc_html($report->report_date); ?></td>
                                 <td>
-                                    <span class="status-badge <?php echo sanitize_title($report['status']); ?>">
-                                        <?php echo esc_html(ucfirst($report['status'])); ?>
+                                    <span class="bassmah-status-<?php echo esc_attr($report->status); ?>">
+                                        <?php echo ucfirst(esc_html($report->status)); ?>
                                     </span>
                                 </td>
-                                <td><?php echo esc_html(date('F j, Y g:i a', strtotime($report['created_at']))); ?></td>
+                                <td><?php echo $task_count; ?></td>
+                                <td>
+                                    <a href="<?php echo admin_url('admin.php?page=bassmah-all-reports&view=report&id=' . $report->id); ?>" 
+                                       class="button button-small">
+                                        <?php _e('View', 'bassmah-staff-reports'); ?>
+                                    </a>
+                                </td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
                 </table>
+                
+                <p>
+                    <a href="<?php echo admin_url('admin.php?page=bassmah-all-reports'); ?>" class="button">
+                        <?php _e('View All Reports', 'bassmah-staff-reports'); ?>
+                    </a>
+                </p>
+            <?php else: ?>
+                <p><?php _e('No reports found.', 'bassmah-staff-reports'); ?></p>
             <?php endif; ?>
+        </div>
+
+        <div class="bassmah-section">
+            <h2><?php _e('Quick Actions', 'bassmah-staff-reports'); ?></h2>
+            
+            <div class="bassmah-quick-actions">
+                <div class="bassmah-action-card">
+                    <h3><?php _e('Manage Staff', 'bassmah-staff-reports'); ?></h3>
+                    <p><?php _e('Add or remove staff members and manage their roles.', 'bassmah-staff-reports'); ?></p>
+                    <a href="<?php echo admin_url('admin.php?page=bassmah-staff'); ?>" class="button button-primary">
+                        <?php _e('Manage Staff', 'bassmah-staff-reports'); ?>
+                    </a>
+                </div>
+                
+                <div class="bassmah-action-card">
+                    <h3><?php _e('Salary Settings', 'bassmah-staff-reports'); ?></h3>
+                    <p><?php _e('Configure salary settings for staff members.', 'bassmah-staff-reports'); ?></p>
+                    <a href="<?php echo admin_url('admin.php?page=bassmah-salary-settings'); ?>" class="button button-primary">
+                        <?php _e('Configure Salaries', 'bassmah-staff-reports'); ?>
+                    </a>
+                </div>
+                
+                <div class="bassmah-action-card">
+                    <h3><?php _e('Working Days', 'bassmah-staff-reports'); ?></h3>
+                    <p><?php _e('Manage working days and holidays.', 'bassmah-staff-reports'); ?></p>
+                    <a href="<?php echo admin_url('admin.php?page=bassmah-working-days'); ?>" class="button button-primary">
+                        <?php _e('Manage Days', 'bassmah-staff-reports'); ?>
+                    </a>
+                </div>
+                
+                <div class="bassmah-action-card">
+                    <h3><?php _e('Export Reports', 'bassmah-staff-reports'); ?></h3>
+                    <p><?php _e('Export reports to CSV or Excel.', 'bassmah-staff-reports'); ?></p>
+                    <a href="<?php echo admin_url('admin.php?page=bassmah-all-reports'); ?>" class="button button-secondary">
+                        <?php _e('Export Data', 'bassmah-staff-reports'); ?>
+                    </a>
+                </div>
+            </div>
         </div>
     </div>
 </div>
+
+<style>
+.bassmah-dashboard-sections {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 30px;
+    margin-top: 30px;
+}
+
+.bassmah-section {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.bassmah-section h2 {
+    margin: 0 0 20px 0;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.bassmah-quick-actions {
+    display: grid;
+    gap: 15px;
+}
+
+.bassmah-action-card {
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 15px;
+    background: #fafafa;
+}
+
+.bassmah-action-card h3 {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    color: #333;
+}
+
+.bassmah-action-card p {
+    margin: 0 0 12px 0;
+    font-size: 12px;
+    color: #666;
+}
+
+.bassmah-status-submitted {
+    background: #e7f3ff;
+    color: #0073aa;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.bassmah-status-approved {
+    background: #edfaef;
+    color: #00a32a;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.bassmah-status-rejected {
+    background: #fcf0f1;
+    color: #d63638;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+@media screen and (max-width: 1024px) {
+    .bassmah-dashboard-sections {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
