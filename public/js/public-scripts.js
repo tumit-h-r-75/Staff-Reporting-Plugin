@@ -26,8 +26,8 @@ jQuery(document).ready(function($) {
             return;
         }
         
-        // Show loading state
-        $submitBtn.prop('disabled', true).html('<div class="bassmah-loading-container"><span class="loading loading-infinity loading-md"></span><span class="bassmah-loading-text">' + bassmah_public.strings.loading + '</span></div>');
+        // Show loading state with modern loading component
+        $submitBtn.prop('disabled', true).html('<div class="bassmah-loading-container"><div class="modern-spinner loading-md"></div><span class="bassmah-loading-text">' + bassmah_public.strings.loading + '</span></div>');
         
         // Collect task data
         var tasks = collectTaskData();
@@ -239,7 +239,7 @@ jQuery(document).ready(function($) {
         var $refreshBtn = $('.bassmah-refresh-dashboard');
         var originalText = $refreshBtn.text();
         
-        $refreshBtn.prop('disabled', true).html('<div class="bassmah-loading-container"><span class="loading loading-infinity loading-md"></span><span class="bassmah-loading-text">Loading...</span></div>');
+        $refreshBtn.prop('disabled', true).html('<div class="bassmah-loading-container"><div class="modern-spinner loading-md"></div><span class="bassmah-loading-text">Loading...</span></div>');
         
         $.ajax({
             url: bassmah_public.rest_url + 'salary/dashboard/' + bassmah_public.user_id,
@@ -288,7 +288,7 @@ jQuery(document).ready(function($) {
         var currentPage = parseInt($loadBtn.data('page')) || 1;
         var nextPage = currentPage + 1;
         
-        $loadBtn.prop('disabled', true).html('<div class="bassmah-loading-container"><span class="loading loading-infinity loading-md"></span><span class="bassmah-loading-text">Loading...</span></div>');
+        $loadBtn.prop('disabled', true).html('<div class="bassmah-loading-container"><div class="modern-spinner loading-md"></div><span class="bassmah-loading-text">Loading...</span></div>');
         
         $.ajax({
             url: bassmah_public.rest_url + 'reports/mine',

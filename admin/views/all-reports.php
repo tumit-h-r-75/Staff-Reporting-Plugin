@@ -327,7 +327,7 @@ function exportReports() {
 function viewReportDetails(reportId) {
     var modal = document.getElementById('bassmah-report-details-modal');
     var content = document.getElementById('bassmah-report-details-content');
-    content.innerHTML = '<div class="bassmah-loading-container"><span class="loading loading-infinity loading-xl"></span><span class="bassmah-loading-text"><?php _e('Loading...', 'bassmah-staff-reports'); ?></span></div>';
+    content.innerHTML = '<div class="bassmah-loading-container"><div class="modern-spinner loading-xl"></div><span class="bassmah-loading-text"><?php _e('Loading...', 'bassmah-staff-reports'); ?></span></div>';
     modal.style.display = 'block';
 
     var params = new URLSearchParams({

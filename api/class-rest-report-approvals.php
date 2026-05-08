@@ -75,18 +75,21 @@ class Bassmah_Staff_Reports_REST_Approvals {
                     'type' => 'integer',
                     'minimum' => 1,
                     'maximum' => 100,
-                    'description' => __('Number of reports to return', 'bassmah-staff-reports')
+                    'description' => __('Number of reports to return', 'bassmah-staff-reports'),
+                    'sanitize_callback' => 'absint'
                 ),
                 'offset' => array(
                     'required' => false,
                     'type' => 'integer',
                     'minimum' => 0,
-                    'description' => __('Number of reports to skip', 'bassmah-staff-reports')
+                    'description' => __('Number of reports to skip', 'bassmah-staff-reports'),
+                    'sanitize_callback' => 'absint'
                 ),
                 'user_id' => array(
                     'required' => false,
                     'type' => 'integer',
                     'description' => __('Filter by user ID', 'bassmah-staff-reports'),
+                    'sanitize_callback' => 'absint',
                     'validate_callback' => array($this, 'validate_user_id')
                 )
             )
@@ -262,9 +265,10 @@ class Bassmah_Staff_Reports_REST_Approvals {
         $table_name = $wpdb->prefix . 'staff_reports';
         $users_table = $wpdb->users;
 
-        $limit = intval($request->get_param('limit')) ?? 20;
-        $offset = intval($request->get_param('offset')) ?? 0;
-        $user_id = intval($request->get_param('user_id')) ?? 0;
+        $limit = intval($request->get_param('limit')) ?: 20;
+        $offset = intval($request->get_param('offset')) ?: 0;
+        $user_id = $request->get_param('user_id');
+        $user_id = (!empty($user_id)) ? intval($user_id) : 0;
 
         $where = "WHERE r.status = 'submitted'";
         $params = array();
@@ -288,6 +292,8 @@ class Bassmah_Staff_Reports_REST_Approvals {
 
         if (!empty($params)) {
             $query = $wpdb->prepare($query, $params);
+        } else {
+            $query = $wpdb->prepare($query, array($limit, $offset));
         }
 
         $reports = $wpdb->get_results($query);
@@ -295,9 +301,11 @@ class Bassmah_Staff_Reports_REST_Approvals {
         // Get total count
         $count_query = "SELECT COUNT(*) FROM {$table_name} WHERE status = 'submitted'";
         if ($user_id > 0) {
-            $count_query .= $wpdb->prepare(" AND user_id = %d", $user_id);
+            $count_query .= " AND user_id = %d";
+            $total = $wpdb->get_var($wpdb->prepare($count_query, $user_id));
+        } else {
+            $total = $wpdb->get_var($count_query);
         }
-        $total = $wpdb->get_var($count_query);
 
         // Format reports
         $formatted_reports = array();
@@ -419,9 +427,17 @@ class Bassmah_Staff_Reports_REST_Approvals {
      *
      * @since    1.0.0
      * @param    mixed    $value    Value to validate
-     * @return   bool
+     * @return   bool|WP_Error
      */
     public function validate_user_id($value) {
-        return is_numeric($value) && intval($value) > 0;
+        // If empty, allow it (optional parameter)
+        if (empty($value) || $value === null || $value === '') {
+            return true;
+        }
+        // If provided, must be a positive integer
+        if (!is_numeric($value) || intval($value) <= 0) {
+            return new WP_Error('invalid_user_id', __('User ID must be a positive integer.', 'bassmah-staff-reports'));
+        }
+        return true;
     }
 }
