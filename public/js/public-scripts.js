@@ -27,18 +27,19 @@ jQuery(document).ready(function($) {
         }
         
         // Show loading state
-        $submitBtn.prop('disabled', true).html('<div class="bassmah-loading-container"><span class="bassmah-loading"></span><span class="bassmah-loading-text">' + bassmah_public.strings.loading + '</span></div>');
+        $submitBtn.prop('disabled', true).html('<div class="bassmah-loading-container"><span class="loading loading-infinity loading-md"></span><span class="bassmah-loading-text">' + bassmah_public.strings.loading + '</span></div>');
         
         // Collect task data
         var tasks = collectTaskData();
         
         // Submit via REST API
         $.ajax({
-            url: bassmah_public.rest_url + 'reports',
+            url: bassmah_public.rest_url + 'v1/reports',
             type: 'POST',
             data: {
                 tasks: tasks,
-                status: 'submitted'
+                status: 'submitted',
+                report_date: new Date().toISOString().split('T')[0]
             },
             beforeSend: function(xhr) {
                 xhr.setRequestHeader('X-WP-Nonce', bassmah_public.nonce);
@@ -238,7 +239,7 @@ jQuery(document).ready(function($) {
         var $refreshBtn = $('.bassmah-refresh-dashboard');
         var originalText = $refreshBtn.text();
         
-        $refreshBtn.prop('disabled', true).html('<div class="bassmah-loading-container"><span class="bassmah-loading"></span><span class="bassmah-loading-text">Loading...</span></div>');
+        $refreshBtn.prop('disabled', true).html('<div class="bassmah-loading-container"><span class="loading loading-infinity loading-md"></span><span class="bassmah-loading-text">Loading...</span></div>');
         
         $.ajax({
             url: bassmah_public.rest_url + 'salary/dashboard/' + bassmah_public.user_id,
@@ -287,7 +288,7 @@ jQuery(document).ready(function($) {
         var currentPage = parseInt($loadBtn.data('page')) || 1;
         var nextPage = currentPage + 1;
         
-        $loadBtn.prop('disabled', true).html('<div class="bassmah-loading-container"><span class="bassmah-loading"></span><span class="bassmah-loading-text">Loading...</span></div>');
+        $loadBtn.prop('disabled', true).html('<div class="bassmah-loading-container"><span class="loading loading-infinity loading-md"></span><span class="bassmah-loading-text">Loading...</span></div>');
         
         $.ajax({
             url: bassmah_public.rest_url + 'reports/mine',

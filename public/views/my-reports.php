@@ -481,7 +481,7 @@ function viewReportDetails(reportId) {
     // Show loading
     const modal = document.getElementById('bassmah-report-details-modal');
     const content = document.getElementById('bassmah-report-details-content');
-    content.innerHTML = '<div class="bassmah-loading-container"><span class="bassmah-loading"></span><span class="bassmah-loading-text"><?php _e('Loading...', 'bassmah-staff-reports'); ?></span></div>';
+    content.innerHTML = '<div class="bassmah-loading-container"><span class="loading loading-infinity loading-xl"></span><span class="bassmah-loading-text"><?php _e('Loading...', 'bassmah-staff-reports'); ?></span></div>';
     modal.style.display = 'block';
     
     // Load report details via AJAX

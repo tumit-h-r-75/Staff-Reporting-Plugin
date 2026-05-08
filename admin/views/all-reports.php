@@ -96,6 +96,23 @@ $users = get_users(array(
     <h1><?php _e('All Reports', 'bassmah-staff-reports'); ?></h1>
     
     <!-- Filters -->
+    <div class="tablenav top">
+        <div class="alignleft actions bulkactions">
+            <button type="button" class="button" onclick="exportReports()">
+                <?php _e('Export Reports', 'bassmah-staff-reports'); ?>
+            </button>
+            <select id="export-format" class="button">
+                <option value="csv"><?php _e('CSV', 'bassmah-staff-reports'); ?></option>
+                <option value="excel"><?php _e('Excel', 'bassmah-staff-reports'); ?></option>
+            </select>
+        </div>
+        <div class="alignright">
+            <label class="screen-reader-text" for="post-search-input"><?php _e('Search Reports:', 'bassmah-staff-reports'); ?></label>
+            <input type="search" id="post-search-input" name="s" value="<?php echo isset($_GET['s']) ? esc_attr($_GET['s']) : ''; ?>" />
+            <?php submit_button(__('Search Reports', 'bassmah-staff-reports'), 'button', 'button-primary'); ?>
+        </div>
+    </div>
+    
     <div class="bassmah-filters">
         <form method="get" action="">
             <table class="form-table">
@@ -257,7 +274,7 @@ $users = get_users(array(
         </div>
         <div class="bassmah-modal-body" id="bassmah-report-details-content">
             <div class="bassmah-loading-container">
-                <span class="bassmah-loading"></span>
+                <span class="loading loading-infinity loading-xl"></span>
                 <span class="bassmah-loading-text"><?php _e('Loading...', 'bassmah-staff-reports'); ?></span>
             </div>
         </div>
@@ -289,10 +306,28 @@ $users = get_users(array(
 </div>
 
 <script>
+function exportReports() {
+    var format = document.getElementById('export-format').value;
+    var url = '/wp-json/bassmah/v2/reports/export?format=' + format;
+    
+    // Add current filters to URL
+    var userId = document.getElementById('user_id') ? document.getElementById('user_id').value : '';
+    var dateFrom = document.getElementById('date_from') ? document.getElementById('date_from').value : '';
+    var dateTo = document.getElementById('date_to') ? document.getElementById('date_to').value : '';
+    var status = document.getElementById('status') ? document.getElementById('status').value : '';
+    
+    if (userId) url += '&user_id=' + encodeURIComponent(userId);
+    if (dateFrom) url += '&date_from=' + encodeURIComponent(dateFrom);
+    if (dateTo) url += '&date_to=' + encodeURIComponent(dateTo);
+    if (status) url += '&status=' + encodeURIComponent(status);
+    
+    window.location.href = url;
+}
+
 function viewReportDetails(reportId) {
     var modal = document.getElementById('bassmah-report-details-modal');
     var content = document.getElementById('bassmah-report-details-content');
-    content.innerHTML = '<div class="bassmah-loading"><?php _e('Loading...', 'bassmah-staff-reports'); ?></div>';
+    content.innerHTML = '<div class="bassmah-loading-container"><span class="loading loading-infinity loading-xl"></span><span class="bassmah-loading-text"><?php _e('Loading...', 'bassmah-staff-reports'); ?></span></div>';
     modal.style.display = 'block';
 
     var params = new URLSearchParams({

@@ -438,8 +438,8 @@ class Bassmah_Staff_Reports_Admin {
             </div>
 
             <div class="bassmah-report-meta">
-                <p><strong><?php _e('Employee:', 'bassmah-staff-reports'); ?></strong> <?php echo esc_html($user->display_name); ?></p>
-                <p><strong><?php _e('Email:', 'bassmah-staff-reports'); ?></strong> <?php echo esc_html($user->user_email); ?></p>
+                <p><strong><?php _e('Employee:', 'bassmah-staff-reports'); ?></strong> <?php echo esc_html($user ? $user->display_name : __('Unknown User', 'bassmah-staff-reports')); ?></p>
+                <p><strong><?php _e('Email:', 'bassmah-staff-reports'); ?></strong> <?php echo esc_html($user ? $user->user_email : __('Unknown Email', 'bassmah-staff-reports')); ?></p>
                 <p><strong><?php _e('Role:', 'bassmah-staff-reports'); ?></strong> <?php echo esc_html(Bassmah_Staff_Reports_Roles::get_user_role_display($report->user_id)); ?></p>
                 <p><strong><?php _e('Submitted:', 'bassmah-staff-reports'); ?></strong> <?php echo date_i18n('g:i A', strtotime($report->submission_time)); ?></p>
                 <?php if ($report->ip_address): ?>

@@ -11,16 +11,59 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+// Get current user
 $current_user = wp_get_current_user();
 $task_categories = get_option('bassmah_task_categories', array());
 $task_statuses = get_option('bassmah_task_statuses', array());
+
+// Check for duplicate submission
+if (class_exists('Bassmah_Staff_Reports_Duplicate_Check')) {
+    require_once BASSMAH_STAFF_REPORTS_PLUGIN_DIR . 'includes/class-duplicate-check.php';
+    $duplicate_check = new Bassmah_Staff_Reports_Duplicate_Check();
+    
+    if ($duplicate_check->has_today_report($current_user->ID)) {
+        $has_duplicate = true;
+        $duplicate_message = __('You have already submitted a report for today. Please contact your manager if you need to make changes.', 'bassmah-staff-reports');
+    } else {
+        $has_duplicate = false;
+        $duplicate_message = '';
+    }
+} else {
+    $has_duplicate = false;
+    $duplicate_message = '';
+}
 ?>
 
 <div class="bassmah-container">
     <form class="bassmah-report-form" id="bassmah-report-form">
         <div class="bassmah-form-header">
             <h2><?php _e('Daily Work Report', 'bassmah-staff-reports'); ?></h2>
-            <p><?php _e('Please submit your daily work report below. All fields marked with * are required.', 'bassmah-staff-reports'); ?></p>
+            <?php if ($has_duplicate): ?>
+                <div class="bassmah-notice bassmah-notice-error">
+                    <?php echo $duplicate_message; ?>
+                </div>
+            <?php else: ?>
+                <p><?php _e('Please submit your daily work report below. All fields marked with * are required.', 'bassmah-staff-reports'); ?></p>
+            <?php endif; ?>
+        </div>
+        
+        <?php if ($has_duplicate): ?>
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    var form = document.getElementById('bassmah-report-form');
+                    var inputs = form.querySelectorAll('input, select, textarea');
+                    inputs.forEach(function(input) {
+                        input.disabled = true;
+                    });
+                    
+                    var submitBtn = form.querySelector('button[type="submit"]');
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                        submitBtn.textContent = '<?php _e('Form Disabled - Report Already Submitted', 'bassmah-staff-reports'); ?>';
+                    }
+                });
+            </script>
+        <?php endif; ?>
         </div>
 
         <!-- Employee Information -->
@@ -33,8 +76,7 @@ $task_statuses = get_option('bassmah_task_statuses', array());
                        id="employee_name" 
                        class="bassmah-form-input" 
                        value="<?php echo esc_attr($current_user->display_name); ?>" 
-                       readonly 
-                       disabled>
+                       <?php echo $has_duplicate ? 'readonly disabled' : 'readonly'; ?>
             </div>
             <div>
                 <label class="bassmah-form-label" for="employee_role">

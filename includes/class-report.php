@@ -370,7 +370,7 @@ class Bassmah_Staff_Reports_Report {
         }
 
         if (!empty($comment)) {
-            $this->trigger_notification('manager_comment', $report);
+            $this->trigger_notification('manager_comment', $report_id);
         }
 
         return true;

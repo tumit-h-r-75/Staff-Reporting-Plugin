@@ -95,6 +95,7 @@ if (!class_exists('Bassmah_Staff_Reports')) {
         require_once BASSMAH_STAFF_REPORTS_PLUGIN_DIR . 'api/class-rest-reports.php';
         require_once BASSMAH_STAFF_REPORTS_PLUGIN_DIR . 'api/class-rest-report-approvals.php';
         require_once BASSMAH_STAFF_REPORTS_PLUGIN_DIR . 'api/class-rest-salary.php';
+        require_once BASSMAH_STAFF_REPORTS_PLUGIN_DIR . 'api/class-rest-export.php';
 
         $this->loader = new Bassmah_Staff_Reports_Loader();
     }
@@ -162,6 +163,9 @@ if (!class_exists('Bassmah_Staff_Reports')) {
 
         $rest_salary = new Bassmah_Staff_Reports_REST_Salary();
         $this->loader->add_action( 'rest_api_init', $rest_salary, 'register_routes' );
+
+        $rest_export = new Bassmah_Staff_Reports_REST_Export();
+        $this->loader->add_action( 'rest_api_init', $rest_export, 'register_routes' );
     }
 
     /**

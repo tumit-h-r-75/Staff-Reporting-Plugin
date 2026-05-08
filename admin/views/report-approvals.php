@@ -94,7 +94,7 @@ global $wpdb;
                 <tr class="no-items">
                     <td colspan="6">
                     <div class="bassmah-loading-container">
-                        <span class="bassmah-loading"></span>
+                        <span class="loading loading-infinity loading-xl"></span>
                         <span class="bassmah-loading-text"><?php _e('Loading pending reports...', 'bassmah-staff-reports'); ?></span>
                     </div>
                 </td>

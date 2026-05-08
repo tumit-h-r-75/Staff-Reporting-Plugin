@@ -12,12 +12,19 @@
 class Bassmah_Staff_Reports_REST_Approvals {
 
     /**
+     * Report model used for approval actions.
+     *
+     * @var Bassmah_Staff_Reports_Report
+     */
+    private $report_service;
+
+    /**
      * Constructor
      *
      * @since    1.0.0
      */
     public function __construct() {
-        // Simple constructor without dependencies
+        $this->report_service = new Bassmah_Staff_Reports_Report();
     }
 
     /**
@@ -31,7 +38,7 @@ class Bassmah_Staff_Reports_REST_Approvals {
             array(
                 'methods' => WP_REST_Server::EDITABLE,
                 'callback' => array($this, 'approve_report'),
-                'permission_callback' => array($this, 'check_approval_permission')
+                'permission_callback' => array($this, 'manager_permission_check')
             )
         ));
 
@@ -138,11 +145,7 @@ class Bassmah_Staff_Reports_REST_Approvals {
         }
 
         // Approve the report
-        $result = $this->report_service->approve_report(
-            $report_id,
-            $manager_id,
-            $comment
-        );
+        $result = $this->report_service->update_report_status($report_id, 'approve', $comment);
 
         if (is_wp_error($result)) {
             return new WP_REST_Response(
@@ -218,11 +221,7 @@ class Bassmah_Staff_Reports_REST_Approvals {
         }
 
         // Reject the report
-        $result = $this->report_service->reject_report(
-            $report_id,
-            $manager_id,
-            $reason
-        );
+        $result = $this->report_service->update_report_status($report_id, 'reject', $reason);
 
         if (is_wp_error($result)) {
             return new WP_REST_Response(
