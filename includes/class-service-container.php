@@ -131,14 +131,16 @@ class Bassmah_Staff_Reports_Service_Container {
         });
 
         // File Manager
-        $this->register('file', function($container) {
-            return new Bassmah_Staff_Reports_File_Manager();
-        });
+        // @TODO: Implement Bassmah_Staff_Reports_File_Manager
+        // $this->register('file', function($container) {
+        //     return new Bassmah_Staff_Reports_File_Manager();
+        // });
 
         // Config Manager
-        $this->register('config', function($container) {
-            return new Bassmah_Staff_Reports_Config_Manager();
-        });
+        // @TODO: Implement Bassmah_Staff_Reports_Config_Manager
+        // $this->register('config', function($container) {
+        //     return new Bassmah_Staff_Reports_Config_Manager();
+        // });
 
         // Report Service
         $this->register('report', function($container) {
@@ -178,27 +180,30 @@ class Bassmah_Staff_Reports_Service_Container {
         });
 
         // Notification Service
-        $this->register('notification', function($container) {
-            return new Bassmah_Staff_Reports_Notification_Service(
-                $container->get('config'),
-                $container->get('file')
-            );
-        });
+        // @TODO: Implement Bassmah_Staff_Reports_Notification_Service
+        // $this->register('notification', function($container) {
+        //     return new Bassmah_Staff_Reports_Notification_Service(
+        //         $container->get('config'),
+        //         $container->get('file')
+        //     );
+        // });
 
         // Export Service
-        $this->register('export', function($container) {
-            return new Bassmah_Staff_Reports_Export_Service(
-                $container->get('file'),
-                $container->get('validation')
-            );
-        });
+        // @TODO: Implement Bassmah_Staff_Reports_Export_Service
+        // $this->register('export', function($container) {
+        //     return new Bassmah_Staff_Reports_Export_Service(
+        //         $container->get('file'),
+        //         $container->get('validation')
+        //     );
+        // });
 
         // Audit Service
-        $this->register('audit', function($container) {
-            return new Bassmah_Staff_Reports_Audit_Service(
-                $container->get('database'),
-                $container->get('security')
-            );
-        });
+        // @TODO: Implement Bassmah_Staff_Reports_Audit_Service
+        // $this->register('audit', function($container) {
+        //     return new Bassmah_Staff_Reports_Audit_Service(
+        //         $container->get('database'),
+        //         $container->get('security')
+        //     );
+        // });
     }
 }

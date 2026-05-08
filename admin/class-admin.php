@@ -556,17 +556,7 @@ class Bassmah_Staff_Reports_Admin {
         if (!current_user_can('bassmah_export_reports')) {
             wp_send_json_error(__('You do not have permission to export reports.', 'bassmah-staff-reports'));
         }
-
-        $filters = array(
-            'date_from' => $_GET['date_from'] ?? '',
-            'date_to' => $_GET['date_to'] ?? '',
-            'user_id' => intval($_GET['employee_id'] ?? 0),
-            'status' => $_GET['status'] ?? ''
-        );
-
-        $report_class = new Bassmah_Staff_Reports_Report();
-        $reports = $report_class->get_reports($filters);
-
+        
         $filename = 'manager-reports-' . date('Y-m-d') . '.csv';
         
         header('Content-Type: text/csv');
@@ -575,7 +565,7 @@ class Bassmah_Staff_Reports_Admin {
         $output = fopen('php://output', 'w');
         
         // CSV headers
-        fputcsv($output, array(
+        $csv_headers = array(
             __('Report Date', 'bassmah-staff-reports'),
             __('Employee Name', 'bassmah-staff-reports'),
             __('Email', 'bassmah-staff-reports'),
@@ -584,23 +574,35 @@ class Bassmah_Staff_Reports_Admin {
             __('Submission Time', 'bassmah-staff-reports'),
             __('Tasks', 'bassmah-staff-reports'),
             __('Manager Comment', 'bassmah-staff-reports')
+        );
+        
+        // Write headers
+        fputcsv($output, $csv_headers);
+        
+        global $wpdb;
+        $reports_table = $wpdb->prefix . 'staff_reports';
+        $reports = $wpdb->get_results($wpdb->prepare(
+            "SELECT r.*, u.display_name, u.user_email 
+             FROM $reports_table r 
+             LEFT JOIN {$wpdb->users} u ON r.user_id = u.ID 
+             WHERE 1=1 ORDER BY r.report_date DESC"
         ));
         
-        // CSV data
         foreach ($reports as $report) {
             $user = get_userdata($report->user_id);
-            $tasks = is_array($report->tasks) ? $report->tasks : json_decode($report->tasks, true);
-            $task_list = '';
+            $tasks = is_array($report->tasks) ? $report->tasks : json_decode($report->tasks_json, true);
+            $task_descriptions = array();
             
-            if (!empty($tasks) && is_array($tasks)) {
-                $task_descriptions = array();
+            if (!empty($tasks)) {
                 foreach ($tasks as $task) {
-                    $task_descriptions[] = $task['task_description'] ?? '';
+                    $task_descriptions[] = $task['task_category'] . ': ' . $task['task_description'];
                 }
-                $task_list = implode('; ', $task_descriptions);
             }
             
-            fputcsv($output, array(
+            $task_list = implode('; ', $task_descriptions);
+            
+            // CSV data row
+            $csv_row = array(
                 $report->report_date,
                 $user ? $user->display_name : 'Unknown',
                 $user ? $user->user_email : 'Unknown',
@@ -609,7 +611,10 @@ class Bassmah_Staff_Reports_Admin {
                 $report->submission_time,
                 $task_list,
                 $report->manager_comment ?? ''
-            ));
+            );
+            
+            // Write CSV row
+            fputcsv($output, $csv_row);
         }
         
         fclose($output);

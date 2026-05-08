@@ -12,41 +12,12 @@
 class Bassmah_Staff_Reports_REST_Approvals {
 
     /**
-     * Service container instance
-     *
-     * @since    1.0.0
-     * @access   private
-     * @var      Bassmah_Staff_Reports_Service_Container    $container    Service container
-     */
-    private $container;
-
-    /**
-     * Report service instance
-     *
-     * @since    1.0.0
-     * @access   private
-     * @var      Bassmah_Staff_Reports_Report_Service    $report_service    Report service
-     */
-    private $report_service;
-
-    /**
-     * Security manager instance
-     *
-     * @since    1.0.0
-     * @access   private
-     * @var      Bassmah_Staff_Reports_Security_Manager    $security    Security manager
-     */
-    private $security;
-
-    /**
      * Constructor
      *
      * @since    1.0.0
      */
     public function __construct() {
-        $this->container = Bassmah_Staff_Reports_Service_Container::get_instance();
-        $this->report_service = $this->container->get('report');
-        $this->security = $this->container->get('security');
+        // Simple constructor without dependencies
     }
 
     /**
@@ -56,23 +27,11 @@ class Bassmah_Staff_Reports_REST_Approvals {
      */
     public function register_routes() {
         // POST /reports/{id}/approve - Approve a report
-        register_rest_route('bassmah/v2', '/reports/(?P<id>\d+)/approve', array(
-            'methods' => WP_REST_Server::CREATABLE,
-            'callback' => array($this, 'approve_report'),
-            'permission_callback' => array($this, 'manager_permission_check'),
-            'args' => array(
-                'id' => array(
-                    'required' => true,
-                    'type' => 'integer',
-                    'description' => __('Report ID', 'bassmah-staff-reports'),
-                    'validate_callback' => array($this, 'validate_report_id')
-                ),
-                'comment' => array(
-                    'required' => false,
-                    'type' => 'string',
-                    'description' => __('Approval comment', 'bassmah-staff-reports'),
-                    'sanitize_callback' => 'sanitize_textarea_field'
-                )
+        register_rest_route('bassmah-staff-reports/v1', '/reports/(?P<id>\d+)/approve', array(
+            array(
+                'methods' => WP_REST_Server::EDITABLE,
+                'callback' => array($this, 'approve_report'),
+                'permission_callback' => array($this, 'check_approval_permission')
             )
         ));
 

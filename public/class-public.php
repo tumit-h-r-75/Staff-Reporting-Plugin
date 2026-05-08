@@ -116,6 +116,14 @@ class Bassmah_Staff_Reports_Public {
                 )
             )
         );
+    }
+
+    /**
+     * Register AJAX actions
+     *
+     * @since    1.0.0
+     */
+    public function register_ajax_actions() {
         add_action('wp_ajax_nopriv_bassmah_get_report_details', array($this, 'handle_ajax_requests'));
         add_action('wp_ajax_bassmah_export_reports', array($this, 'handle_ajax_requests'));
         add_action('wp_ajax_nopriv_bassmah_export_reports', array($this, 'handle_ajax_requests'));
