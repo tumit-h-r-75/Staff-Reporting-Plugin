@@ -21,7 +21,7 @@ $year = isset($_GET['year']) ? intval($_GET['year']) : date('Y');
 // Get working days for selected month
 $start_date = $month . '-01';
 $end_date = date('Y-m-t', strtotime($month . '-01'));
-$table_name = $wpdb->prefix . 'bassmah_staff_working_days';
+$table_name = $wpdb->prefix . 'staff_working_days';
 
 $working_days = $wpdb->get_results(
     $wpdb->prepare(
@@ -290,9 +290,9 @@ function editWorkingDay(id) {
         });
 }
 
-function deleteWorkingDay($id) {
+function deleteWorkingDay(id) {
     if (confirm('<?php _e('Are you sure you want to delete this working day?', 'bassmah-staff-reports'); ?>')) {
-        window.location.href = '<?php echo admin_url('admin-ajax.php'); ?>?action=delete_working_day&id=' + $id + '&_wpnonce=<?php echo wp_create_nonce('delete_working_day_' . $id); ?>';
+        window.location.href = '<?php echo admin_url('admin-ajax.php'); ?>?action=delete_working_day&id=' + id + '&_wpnonce=<?php echo wp_create_nonce('delete_working_day'); ?>';
     }
 }
 

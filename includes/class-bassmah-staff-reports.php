@@ -204,3 +204,4 @@ if (!class_exists('Bassmah_Staff_Reports')) {
         return $this->version;
     }
 }
+}

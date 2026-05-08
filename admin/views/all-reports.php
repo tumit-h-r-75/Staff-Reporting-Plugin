@@ -256,7 +256,10 @@ $users = get_users(array(
             <button class="bassmah-modal-close" type="button" onclick="hideReportDetails()">&times;</button>
         </div>
         <div class="bassmah-modal-body" id="bassmah-report-details-content">
-            <div class="bassmah-loading"><?php _e('Loading...', 'bassmah-staff-reports'); ?></div>
+            <div class="bassmah-loading-container">
+                <span class="bassmah-loading"></span>
+                <span class="bassmah-loading-text"><?php _e('Loading...', 'bassmah-staff-reports'); ?></span>
+            </div>
         </div>
     </div>
 </div>

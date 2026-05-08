@@ -425,6 +425,23 @@
     border-top: 3px solid #0073aa;
     border-radius: 50%;
     animation: spin 1s linear infinite;
+    vertical-align: middle;
+    margin-right: 8px;
+}
+
+.bassmah-loading-text {
+    display: inline-block;
+    vertical-align: middle;
+    font-size: 14px;
+    color: #666;
+}
+
+.bassmah-loading-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    text-align: center;
 }
 
 @keyframes spin {

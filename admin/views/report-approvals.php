@@ -92,7 +92,12 @@ global $wpdb;
             </thead>
             <tbody id="bassmah-approvals-tbody">
                 <tr class="no-items">
-                    <td colspan="6"><?php _e('Loading pending reports...', 'bassmah-staff-reports'); ?></td>
+                    <td colspan="6">
+                    <div class="bassmah-loading-container">
+                        <span class="bassmah-loading"></span>
+                        <span class="bassmah-loading-text"><?php _e('Loading pending reports...', 'bassmah-staff-reports'); ?></span>
+                    </div>
+                </td>
                 </tr>
             </tbody>
         </table>

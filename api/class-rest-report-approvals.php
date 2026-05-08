@@ -27,7 +27,7 @@ class Bassmah_Staff_Reports_REST_Approvals {
      */
     public function register_routes() {
         // POST /reports/{id}/approve - Approve a report
-        register_rest_route('bassmah-staff-reports/v1', '/reports/(?P<id>\d+)/approve', array(
+        register_rest_route('bassmah/v2', '/reports/(?P<id>\d+)/approve', array(
             array(
                 'methods' => WP_REST_Server::EDITABLE,
                 'callback' => array($this, 'approve_report'),
