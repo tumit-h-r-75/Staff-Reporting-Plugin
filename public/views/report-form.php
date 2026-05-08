@@ -73,6 +73,7 @@ if ($duplicate_check->has_today_report($current_user->ID)) {
                        class="bassmah-form-input" 
                        value="<?php echo esc_attr($current_user->display_name); ?>" 
                        <?php echo $has_duplicate ? 'readonly disabled' : 'readonly'; ?>
+                aria-required="true">
             </div>
             <div>
                 <label class="bassmah-form-label" for="employee_role">
@@ -83,7 +84,8 @@ if ($duplicate_check->has_today_report($current_user->ID)) {
                        class="bassmah-form-input" 
                        value="<?php echo esc_html(Bassmah_Staff_Reports_Roles::get_user_role_display($current_user->ID)); ?>" 
                        readonly 
-                       disabled>
+                       disabled 
+                       aria-required="true">
             </div>
         </div>
 
@@ -97,7 +99,8 @@ if ($duplicate_check->has_today_report($current_user->ID)) {
                    class="bassmah-form-input bassmah-datepicker" 
                    value="<?php echo current_time('Y-m-d'); ?>" 
                    readonly 
-                   disabled>
+                   disabled 
+                   aria-required="true">
             <small><?php _e('Only today\'s date is allowed for report submission.', 'bassmah-staff-reports'); ?></small>
         </div>
 
@@ -112,7 +115,7 @@ if ($duplicate_check->has_today_report($current_user->ID)) {
             <div class="bassmah-task-row">
                 <div class="bassmah-task-header">
                     <span class="bassmah-task-number"><?php _e('Task 1', 'bassmah-staff-reports'); ?></span>
-                    <button type="button" class="bassmah-remove-task" style="display: none;">
+                    <button type="button" class="bassmah-remove-task" style="display: none;" aria-label="<?php _e('Remove task', 'bassmah-staff-reports'); ?>">
                         <?php _e('Remove', 'bassmah-staff-reports'); ?>
                     </button>
                 </div>
@@ -122,7 +125,7 @@ if ($duplicate_check->has_today_report($current_user->ID)) {
                         <label class="bassmah-form-label" for="task_category_1">
                             <?php _e('Task Category', 'bassmah-staff-reports'); ?>
                         </label>
-                        <select id="task_category_1" class="bassmah-form-select bassmah-task-category">
+                        <select id="task_category_1" class="bassmah-form-select bassmah-task-category" aria-required="true">
                             <option value=""><?php _e('Select Category', 'bassmah-staff-reports'); ?></option>
                             <?php foreach ($task_categories as $category): ?>
                                 <option value="<?php echo esc_attr($category); ?>">
@@ -142,7 +145,8 @@ if ($duplicate_check->has_today_report($current_user->ID)) {
                                     <input type="radio" 
                                            name="completion_status_1" 
                                            value="<?php echo esc_attr($value); ?>"
-                                           <?php echo ($value === 'completed') ? 'checked' : ''; ?>>
+                                           <?php echo ($value === 'completed') ? 'checked' : ''; ?>
+                                           aria-required="true">
                                     <?php echo esc_html($label); ?>
                                 </label>
                             <?php endforeach; ?>
@@ -157,7 +161,8 @@ if ($duplicate_check->has_today_report($current_user->ID)) {
                     <textarea id="task_description_1" 
                               class="bassmah-form-textarea bassmah-task-description" 
                               placeholder="<?php _e('Describe what you worked on...', 'bassmah-staff-reports'); ?>"
-                              required></textarea>
+                              required 
+                              aria-required="true"></textarea>
                 </div>
 
                 <div class="bassmah-task-grid">
@@ -168,7 +173,8 @@ if ($duplicate_check->has_today_report($current_user->ID)) {
                         <textarea id="next_action_1" 
                                   class="bassmah-form-textarea bassmah-next-action" 
                                   placeholder="<?php _e('What are the next steps?', 'bassmah-staff-reports'); ?>"
-                                  required></textarea>
+                                  required 
+                                  aria-required="true"></textarea>
                     </div>
 
                     <div>
@@ -195,7 +201,7 @@ if ($duplicate_check->has_today_report($current_user->ID)) {
             <div class="bassmah-task-row bassmah-task-template" style="display: none;">
                 <div class="bassmah-task-header">
                     <span class="bassmah-task-number"><?php _e('Task X', 'bassmah-staff-reports'); ?></span>
-                    <button type="button" class="bassmah-remove-task">
+                    <button type="button" class="bassmah-remove-task" aria-label="<?php _e('Remove task', 'bassmah-staff-reports'); ?>">
                         <?php _e('Remove', 'bassmah-staff-reports'); ?>
                     </button>
                 </div>
@@ -205,7 +211,7 @@ if ($duplicate_check->has_today_report($current_user->ID)) {
                         <label class="bassmah-form-label" for="task_category_X">
                             <?php _e('Task Category', 'bassmah-staff-reports'); ?>
                         </label>
-                        <select id="task_category_X" class="bassmah-form-select bassmah-task-category" disabled>
+                        <select id="task_category_X" class="bassmah-form-select bassmah-task-category" disabled aria-required="true">
                             <option value=""><?php _e('Select Category', 'bassmah-staff-reports'); ?></option>
                             <?php foreach ($task_categories as $category): ?>
                                 <option value="<?php echo esc_attr($category); ?>">
@@ -226,7 +232,8 @@ if ($duplicate_check->has_today_report($current_user->ID)) {
                                            name="completion_status_X" 
                                            value="<?php echo esc_attr($value); ?>"
                                            <?php echo ($value === 'completed') ? 'checked' : ''; ?>
-                                           disabled>
+                                           disabled 
+                                           aria-required="true">
                                     <?php echo esc_html($label); ?>
                                 </label>
                             <?php endforeach; ?>
@@ -241,8 +248,9 @@ if ($duplicate_check->has_today_report($current_user->ID)) {
                     <textarea id="task_description_X" 
                               class="bassmah-form-textarea bassmah-task-description" 
                               placeholder="<?php _e('Describe what you worked on...', 'bassmah-staff-reports'); ?>"
-                              disabled
-                              required></textarea>
+                              disabled 
+                              required 
+                              aria-required="true"></textarea>
                 </div>
 
                 <div class="bassmah-task-grid">
@@ -253,8 +261,9 @@ if ($duplicate_check->has_today_report($current_user->ID)) {
                         <textarea id="next_action_X" 
                                   class="bassmah-form-textarea bassmah-next-action" 
                                   placeholder="<?php _e('What are the next steps?', 'bassmah-staff-reports'); ?>"
-                                  disabled
-                                  required></textarea>
+                                  disabled 
+                                  required 
+                                  aria-required="true"></textarea>
                     </div>
 
                     <div>
