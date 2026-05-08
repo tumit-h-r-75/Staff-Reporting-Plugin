@@ -6,7 +6,8 @@
  * @package    Bassmah_Staff_Reports
  * @author     Tumit <tumit@bassmah.ca>
  */
-class Bassmah_Staff_Reports_REST_Reports {
+if (!class_exists('Bassmah_Staff_Reports_REST_Reports')) {
+    class Bassmah_Staff_Reports_REST_Reports {
 
     /**
      * Register REST API routes
@@ -584,4 +585,6 @@ class Bassmah_Staff_Reports_REST_Reports {
             'updated_at' => $report->updated_at,
         );
     }
+}
+}
 }

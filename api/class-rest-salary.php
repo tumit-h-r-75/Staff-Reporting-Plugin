@@ -6,7 +6,8 @@
  * @package    Bassmah_Staff_Reports
  * @author     Tumit <tumit@bassmah.ca>
  */
-class Bassmah_Staff_Reports_REST_Salary {
+if (!class_exists('Bassmah_Staff_Reports_REST_Salary')) {
+    class Bassmah_Staff_Reports_REST_Salary {
 
     /**
      * Register REST API routes
@@ -401,4 +402,5 @@ class Bassmah_Staff_Reports_REST_Salary {
 
         return current_user_can('bassmah_export_reports');
     }
+}
 }

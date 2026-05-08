@@ -9,7 +9,8 @@
  * @package    Bassmah_Staff_Reports
  * @author     Tumit <tumit@bassmah.ca>
  */
-class Bassmah_Staff_Reports_REST_Approvals {
+if (!class_exists('Bassmah_Staff_Reports_REST_Approvals')) {
+    class Bassmah_Staff_Reports_REST_Approvals {
 
     /**
      * Report model used for approval actions.
@@ -34,7 +35,7 @@ class Bassmah_Staff_Reports_REST_Approvals {
      */
     public function register_routes() {
         // POST /reports/{id}/approve - Approve a report
-        register_rest_route('bassmah/v2', '/reports/(?P<id>\d+)/approve', array(
+        register_rest_route('bassmah/v1', '/reports/(?P<id>\d+)/approve', array(
             array(
                 'methods' => WP_REST_Server::EDITABLE,
                 'callback' => array($this, 'approve_report'),
@@ -43,7 +44,7 @@ class Bassmah_Staff_Reports_REST_Approvals {
         ));
 
         // POST /reports/{id}/reject - Reject a report
-        register_rest_route('bassmah/v2', '/reports/(?P<id>\d+)/reject', array(
+        register_rest_route('bassmah/v1', '/reports/(?P<id>\d+)/reject', array(
             'methods' => WP_REST_Server::CREATABLE,
             'callback' => array($this, 'reject_report'),
             'permission_callback' => array($this, 'manager_permission_check'),
@@ -65,7 +66,7 @@ class Bassmah_Staff_Reports_REST_Approvals {
         ));
 
         // GET /reports/pending - Get pending reports for approval
-        register_rest_route('bassmah/v2', '/reports/pending', array(
+        register_rest_route('bassmah/v1', '/reports/pending', array(
             'methods' => WP_REST_Server::READABLE,
             'callback' => array($this, 'get_pending_reports'),
             'permission_callback' => array($this, 'manager_permission_check'),
@@ -96,7 +97,7 @@ class Bassmah_Staff_Reports_REST_Approvals {
         ));
 
         // GET /reports/approval-history - Get approval history
-        register_rest_route('bassmah/v2', '/reports/(?P<id>\d+)/approval-history', array(
+        register_rest_route('bassmah/v1', '/reports/(?P<id>\d+)/approval-history', array(
             'methods' => WP_REST_Server::READABLE,
             'callback' => array($this, 'get_approval_history'),
             'permission_callback' => array($this, 'manager_permission_check'),
@@ -304,7 +305,7 @@ class Bassmah_Staff_Reports_REST_Approvals {
             $count_query .= " AND user_id = %d";
             $total = $wpdb->get_var($wpdb->prepare($count_query, $user_id));
         } else {
-            $total = $wpdb->get_var($count_query);
+            $total = $wpdb->get_var($wpdb->prepare($count_query));
         }
 
         // Format reports
@@ -440,4 +441,5 @@ class Bassmah_Staff_Reports_REST_Approvals {
         }
         return true;
     }
+}
 }

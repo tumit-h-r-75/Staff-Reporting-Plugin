@@ -17,17 +17,14 @@ $task_categories = get_option('bassmah_task_categories', array());
 $task_statuses = get_option('bassmah_task_statuses', array());
 
 // Check for duplicate submission
-if (class_exists('Bassmah_Staff_Reports_Duplicate_Check')) {
+if (!class_exists('Bassmah_Staff_Reports_Duplicate_Check')) {
     require_once BASSMAH_STAFF_REPORTS_PLUGIN_DIR . 'includes/class-duplicate-check.php';
-    $duplicate_check = new Bassmah_Staff_Reports_Duplicate_Check();
-    
-    if ($duplicate_check->has_today_report($current_user->ID)) {
-        $has_duplicate = true;
-        $duplicate_message = __('You have already submitted a report for today. Please contact your manager if you need to make changes.', 'bassmah-staff-reports');
-    } else {
-        $has_duplicate = false;
-        $duplicate_message = '';
-    }
+}
+$duplicate_check = new Bassmah_Staff_Reports_Duplicate_Check();
+
+if ($duplicate_check->has_today_report($current_user->ID)) {
+    $has_duplicate = true;
+    $duplicate_message = __('You have already submitted a report for today. Please contact your manager if you need to make changes.', 'bassmah-staff-reports');
 } else {
     $has_duplicate = false;
     $duplicate_message = '';
@@ -64,7 +61,6 @@ if (class_exists('Bassmah_Staff_Reports_Duplicate_Check')) {
                 });
             </script>
         <?php endif; ?>
-        </div>
 
         <!-- Employee Information -->
         <div class="bassmah-form-row half">

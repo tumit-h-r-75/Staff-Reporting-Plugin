@@ -133,7 +133,7 @@
             var self = this;
             
             return BassmahJWTAuth.authenticatedAjax({
-                url: bassmahAjax.ajaxurl,
+                url: bassmah_public.ajaxurl,
                 method: 'POST',
                 data: {
                     action: 'bassmah_frontend_ajax',
@@ -175,7 +175,7 @@
          */
         getMyReports: function(page, filters) {
             return BassmahJWTAuth.authenticatedAjax({
-                url: bassmahAjax.ajaxurl,
+                url: bassmah_public.ajaxurl,
                 method: 'POST',
                 data: {
                     action: 'bassmah_frontend_ajax',
@@ -248,33 +248,7 @@
         // Initialize JWT authentication
         BassmahJWTAuth.init();
         
-        // Handle form submission
-        $('#bassmah-report-form').on('submit', function(e) {
-            e.preventDefault();
-            
-            var tasks = [];
-            $('.bassmah-task-item').each(function() {
-                var task = {
-                    task_description: $(this).find('.task-description').val(),
-                    task_category: $(this).find('.task-category').val(),
-                    task_status: $(this).find('.task-status').val(),
-                    next_action: $(this).find('.next-action').val(),
-                    manager_assigned_task: $(this).find('.manager-task').val(),
-                    additional_notes: $(this).find('.additional-notes').val()
-                };
-                
-                if (task.task_description) {
-                    tasks.push(task);
-                }
-            });
-            
-            if (tasks.length === 0) {
-                BassmahFormSubmit.showError('Please add at least one task.');
-                return;
-            }
-            
-            BassmahFormSubmit.submitReport({ tasks: tasks });
-        });
+        // Form submission is handled by public-scripts.js using REST API
         
         // Handle pagination
         $(document).on('click', '.bassmah-pagination a', function(e) {

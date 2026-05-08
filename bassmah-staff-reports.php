@@ -66,13 +66,8 @@ register_deactivation_hook(__FILE__, 'deactivate_bassmah_staff_reports');
 // Main plugin class
 require BASSMAH_STAFF_REPORTS_PLUGIN_DIR . 'includes/class-bassmah-staff-reports.php';
 
-// Include files for REST API endpoints
-// Make sure these file paths are correct based on your plugin structure
-require BASSMAH_STAFF_REPORTS_PLUGIN_DIR . 'includes/class-bassmah-staff-reports-rest-api.php';
-// Assuming Bassmah_Staff_Reports_REST_Report_Approvals is in this file or a file included by it.
-// If it's in a separate file, include it here. For example:
-// require BASSMAH_STAFF_REPORTS_PLUGIN_DIR . 'includes/class-bassmah-staff-reports-rest-report-approvals.php';
-// Or if it's within class-bassmah-staff-reports-rest-api.php, make sure it's properly namespaced or defined.
+// REST API endpoints are loaded in the main plugin class
+// See includes/class-bassmah-staff-reports.php lines 95-98
 
 
 /**
@@ -86,22 +81,8 @@ if (!function_exists('run_bassmah_staff_reports')) {
     }
 }
 
-// Include REST API classes directly
-require_once BASSMAH_STAFF_REPORTS_PLUGIN_DIR . 'api/class-rest-reports.php';
-require_once BASSMAH_STAFF_REPORTS_PLUGIN_DIR . 'api/class-rest-report-approvals.php';
-require_once BASSMAH_STAFF_REPORTS_PLUGIN_DIR . 'api/class-rest-export.php';
-
-// Register REST routes
-add_action('rest_api_init', function() {
-    $rest_reports = new Bassmah_Staff_Reports_REST_Reports();
-    $rest_reports->register_routes();
-    
-    $rest_approvals = new Bassmah_Staff_Reports_REST_Report_Approvals();
-    $rest_approvals->register_routes();
-    
-    $rest_export = new Bassmah_Staff_Reports_REST_Export();
-    $rest_export->register_routes();
-});
+// REST API classes are loaded in the main plugin class
+// See includes/class-bassmah-staff-reports.php lines 95-98
 
 // Run the plugin
 run_bassmah_staff_reports();

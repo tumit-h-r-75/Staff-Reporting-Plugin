@@ -66,18 +66,8 @@ class Bassmah_Staff_Reports_Report {
             'updated_at' => current_time('mysql')
         );
 
-        // Debug: Log table name and data
-        error_log('Bassmah Plugin: Attempting to insert into table: ' . $this->table_name);
-        error_log('Bassmah Plugin: Report data: ' . print_r($report_data, true));
-        error_log('Bassmah Plugin: WPDB last error before insert: ' . $wpdb->last_error);
-        
         // Insert report
         $result = $wpdb->insert($this->table_name, $report_data, array('%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s'));
-
-        // Debug: Log result
-        error_log('Bassmah Plugin: Insert result: ' . ($result ? 'SUCCESS' : 'FAILED'));
-        error_log('Bassmah Plugin: WPDB last error after insert: ' . $wpdb->last_error);
-        error_log('Bassmah Plugin: WPDB insert ID: ' . $wpdb->insert_id);
 
         if ($result === false) {
             return new WP_Error(
@@ -88,7 +78,6 @@ class Bassmah_Staff_Reports_Report {
         }
 
         $report_id = $wpdb->insert_id;
-        error_log('Bassmah Plugin: Report inserted with ID: ' . $report_id);
 
         // Trigger notification
         $this->trigger_notification('report_submitted', $report_id);
@@ -425,13 +414,21 @@ class Bassmah_Staff_Reports_Report {
      * @return string
      */
     private function get_user_ip() {
-        if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
-            return $_SERVER['HTTP_CLIENT_IP'];
-        } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-            return $_SERVER['HTTP_X_FORWARDED_FOR'];
-        } else {
-            return $_SERVER['REMOTE_ADDR'];
+        $ip = '';
+        
+        // Check for forwarded IPs but validate them
+        if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+            $ips = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
+            $ip = trim($ips[0]);
         }
+        
+        // Validate IP format
+        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+            return $ip;
+        }
+        
+        // Fall back to REMOTE_ADDR which is most reliable
+        return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
     }
 
     /**

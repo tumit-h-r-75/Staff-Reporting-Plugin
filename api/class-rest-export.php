@@ -19,7 +19,7 @@ if (!class_exists('Bassmah_Staff_Reports_REST_Export')) {
          */
         public function register_routes() {
             // POST /reports/export - Export reports
-            register_rest_route('bassmah/v2', '/reports/export', array(
+            register_rest_route('bassmah/v1', '/reports/export', array(
                 array(
                     'methods' => WP_REST_Server::CREATABLE,
                     'callback' => array($this, 'export_reports'),

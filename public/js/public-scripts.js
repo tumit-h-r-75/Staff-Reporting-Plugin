@@ -36,23 +36,26 @@ jQuery(document).ready(function($) {
         $.ajax({
             url: bassmah_public.rest_url + 'v1/reports',
             type: 'POST',
-            data: {
+            contentType: 'application/json',
+            data: JSON.stringify({
                 tasks: tasks,
                 status: 'submitted',
                 report_date: new Date().toISOString().split('T')[0]
-            },
+            }),
             beforeSend: function(xhr) {
                 xhr.setRequestHeader('X-WP-Nonce', bassmah_public.nonce);
             },
             dataType: 'json',
             success: function(response) {
-                if (response.data) {
+                if (response && response.id) {
                     showNotice(bassmah_public.strings.report_submitted, 'success');
                     $form[0].reset();
                     // Remove all task rows except the first one
                     $('.bassmah-task-row:not(:first)').remove();
                     // Reset first task row
                     resetTaskRow($('.bassmah-task-row:first'));
+                    // Clear any saved draft
+                    localStorage.removeItem('bassmah_report_draft');
                 } else {
                     showNotice(bassmah_public.strings.error_occurred, 'error');
                 }

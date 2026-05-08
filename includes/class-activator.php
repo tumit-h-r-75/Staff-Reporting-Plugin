@@ -81,28 +81,16 @@ class Bassmah_Staff_Reports_Activator {
         // Include WordPress database upgrade functions
         require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
         
-        // Debug: Log table creation attempts
-        error_log('Bassmah Plugin: Creating tables with prefix: ' . $wpdb->prefix);
-        error_log('Bassmah Plugin: Reports table name: ' . $wpdb->prefix . 'staff_reports');
-        error_log('Bassmah Plugin: Salary table name: ' . $table_salary_settings);
-        error_log('Bassmah Plugin: Working days table name: ' . $table_working_days);
-        
         // Create tables using direct query for better reliability
-        error_log('Bassmah Plugin: Attempting to create staff_reports table');
         $result_reports = $wpdb->query($sql_reports);
-        error_log('Bassmah Plugin: staff_reports creation result: ' . ($result_reports ? 'SUCCESS' : 'FAILED'));
-        
-        error_log('Bassmah Plugin: Attempting to create staff_salary_settings table');
         $result_salary = $wpdb->query($sql_salary);
-        error_log('Bassmah Plugin: staff_salary_settings creation result: ' . ($result_salary ? 'SUCCESS' : 'FAILED'));
-        
-        error_log('Bassmah Plugin: Attempting to create staff_working_days table');
         $result_working_days = $wpdb->query($sql_working_days);
-        error_log('Bassmah Plugin: staff_working_days creation result: ' . ($result_working_days ? 'SUCCESS' : 'FAILED'));
         
         // Alternative: Try dbDelta if direct query fails
         if (!$result_reports || !$result_salary || !$result_working_days) {
-            error_log('Bassmah Plugin: Direct query failed, trying dbDelta');
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('Bassmah Plugin: Direct query failed, trying dbDelta');
+            }
             require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
             
             $result_reports = dbDelta($sql_reports);
@@ -112,19 +100,13 @@ class Bassmah_Staff_Reports_Activator {
         
         // Verify tables exist after creation
         $staff_reports_exists = $wpdb->get_var("SHOW TABLES LIKE '" . $wpdb->prefix . "staff_reports'");
-        error_log('Bassmah Plugin: staff_reports table exists: ' . ($staff_reports_exists ? 'YES' : 'NO'));
-        
         $staff_salary_exists = $wpdb->get_var("SHOW TABLES LIKE '" . $wpdb->prefix . "staff_salary_settings'");
-        error_log('Bassmah Plugin: staff_salary_settings table exists: ' . ($staff_salary_exists ? 'YES' : 'NO'));
-        
         $staff_working_days_exists = $wpdb->get_var("SHOW TABLES LIKE '" . $wpdb->prefix . "staff_working_days'");
-        error_log('Bassmah Plugin: staff_working_days table exists: ' . ($staff_working_days_exists ? 'YES' : 'NO'));
         
         // Check if all tables were created successfully
         $all_tables_created = $staff_reports_exists && $staff_salary_exists && $staff_working_days_exists;
         
         if (!$all_tables_created) {
-            error_log('Bassmah Plugin: ERROR - Some tables failed to create');
             wp_die(__('Database tables could not be created. Please check database permissions and try again.', 'bassmah-staff-reports'));
         }
         
