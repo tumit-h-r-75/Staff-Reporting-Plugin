@@ -19,6 +19,7 @@ if (!in_array('administrator', $current_user->roles) && !in_array('bassmah_manag
 global $wpdb;
 $salary_table = $wpdb->prefix . 'staff_salary_settings';
 
+if (!function_exists('bassmah_ensure_salary_settings_table')) {
 function bassmah_ensure_salary_settings_table($wpdb, $salary_table) {
     $table_exists = $wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $salary_table));
     if ($table_exists === $salary_table) {
@@ -32,7 +33,7 @@ function bassmah_ensure_salary_settings_table($wpdb, $salary_table) {
         user_id BIGINT(20) UNSIGNED NOT NULL,
         monthly_salary DECIMAL(10,2) NOT NULL DEFAULT 0.00,
         working_days_per_month INT(11) NOT NULL DEFAULT 22,
-        daily_rate DECIMAL(10,2) GENERATED ALWAYS AS (monthly_salary / working_days_per_month) STORED,
+        daily_rate DECIMAL(10,2) NOT NULL DEFAULT 0.00,
         currency VARCHAR(3) NOT NULL DEFAULT 'CAD',
         effective_from DATE NOT NULL,
         created_by BIGINT(20) UNSIGNED NOT NULL,
@@ -44,6 +45,7 @@ function bassmah_ensure_salary_settings_table($wpdb, $salary_table) {
     ) $charset_collate";
 
     return $wpdb->query($sql) !== false;
+}
 }
 
 $salary_table_ready = bassmah_ensure_salary_settings_table($wpdb, $salary_table);

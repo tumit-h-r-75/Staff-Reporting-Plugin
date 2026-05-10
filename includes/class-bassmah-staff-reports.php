@@ -92,6 +92,18 @@ if (!class_exists('Bassmah_Staff_Reports')) {
         require_once BASSMAH_STAFF_REPORTS_PLUGIN_DIR . 'includes/class-salary.php';
         require_once BASSMAH_STAFF_REPORTS_PLUGIN_DIR . 'includes/class-salary-calculator.php';
         require_once BASSMAH_STAFF_REPORTS_PLUGIN_DIR . 'includes/class-jwt-auth.php';
+        require_once BASSMAH_STAFF_REPORTS_PLUGIN_DIR . 'includes/class-service-container.php';
+        require_once BASSMAH_STAFF_REPORTS_PLUGIN_DIR . 'includes/class-database-manager.php';
+        require_once BASSMAH_STAFF_REPORTS_PLUGIN_DIR . 'includes/class-cache-manager.php';
+        require_once BASSMAH_STAFF_REPORTS_PLUGIN_DIR . 'includes/class-security-manager.php';
+        require_once BASSMAH_STAFF_REPORTS_PLUGIN_DIR . 'includes/class-validation-manager.php';
+        require_once BASSMAH_STAFF_REPORTS_PLUGIN_DIR . 'includes/class-report-service.php';
+        require_once BASSMAH_STAFF_REPORTS_PLUGIN_DIR . 'includes/class-salary-service.php';
+        require_once BASSMAH_STAFF_REPORTS_PLUGIN_DIR . 'includes/class-user-service.php';
+        require_once BASSMAH_STAFF_REPORTS_PLUGIN_DIR . 'includes/class-working-days-service.php';
+        require_once BASSMAH_STAFF_REPORTS_PLUGIN_DIR . 'includes/class-exporter.php';
+        require_once BASSMAH_STAFF_REPORTS_PLUGIN_DIR . 'includes/class-duplicate-check.php';
+        require_once BASSMAH_STAFF_REPORTS_PLUGIN_DIR . 'includes/class-loading-component.php';
         require_once BASSMAH_STAFF_REPORTS_PLUGIN_DIR . 'admin/class-admin.php';
         require_once BASSMAH_STAFF_REPORTS_PLUGIN_DIR . 'public/class-public.php';
         require_once BASSMAH_STAFF_REPORTS_PLUGIN_DIR . 'api/class-rest-reports.php';

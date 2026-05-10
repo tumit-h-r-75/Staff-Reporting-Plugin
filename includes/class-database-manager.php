@@ -367,6 +367,116 @@ class Bassmah_Staff_Reports_Database_Manager {
     }
 
     /**
+     * Get working days
+     *
+     * @since    1.0.0
+     * @param    array    $args    Query arguments
+     * @return   array
+     */
+    public function get_working_days($args = array()) {
+        $table_name = $this->prefix . 'staff_working_days';
+        
+        $where = "1=1";
+        $values = array();
+        
+        if (!empty($args['date_from'])) {
+            $where .= " AND work_date >= %s";
+            $values[] = $args['date_from'];
+        }
+        
+        if (!empty($args['date_to'])) {
+            $where .= " AND work_date <= %s";
+            $values[] = $args['date_to'];
+        }
+        
+        if (isset($args['is_holiday'])) {
+            $where .= " AND is_holiday = %d";
+            $values[] = $args['is_holiday'];
+        }
+        
+        $sql = "SELECT * FROM {$table_name} WHERE {$where} ORDER BY work_date DESC";
+        
+        if (!empty($values)) {
+            $sql = $this->wpdb->prepare($sql, $values);
+        }
+        
+        return $this->wpdb->get_results($sql);
+    }
+
+    /**
+     * Get single working day
+     *
+     * @since    1.0.0
+     * @param    int      $id    Working day ID
+     * @return   object|null
+     */
+    public function get_working_day($id) {
+        $table_name = $this->prefix . 'staff_working_days';
+        return $this->wpdb->get_row($this->wpdb->prepare(
+            "SELECT * FROM {$table_name} WHERE id = %d",
+            $id
+        ));
+    }
+
+    /**
+     * Create working day
+     *
+     * @since    1.0.0
+     * @param    array    $data    Working day data
+     * @return   int|WP_Error
+     */
+    public function create_working_day($data) {
+        $table_name = $this->prefix . 'staff_working_days';
+        
+        $result = $this->wpdb->insert($table_name, $data);
+        
+        if ($result === false) {
+            return new WP_Error('db_error', 'Failed to create working day');
+        }
+        
+        return $this->wpdb->insert_id;
+    }
+
+    /**
+     * Update working day
+     *
+     * @since    1.0.0
+     * @param    int      $id    Working day ID
+     * @param    array    $data  Update data
+     * @return   bool|WP_Error
+     */
+    public function update_working_day($id, $data) {
+        $table_name = $this->prefix . 'staff_working_days';
+        
+        $result = $this->wpdb->update($table_name, $data, array('id' => $id));
+        
+        if ($result === false) {
+            return new WP_Error('db_error', 'Failed to update working day');
+        }
+        
+        return true;
+    }
+
+    /**
+     * Delete working day
+     *
+     * @since    1.0.0
+     * @param    int      $id    Working day ID
+     * @return   bool|WP_Error
+     */
+    public function delete_working_day($id) {
+        $table_name = $this->prefix . 'staff_working_days';
+        
+        $result = $this->wpdb->delete($table_name, array('id' => $id));
+        
+        if ($result === false) {
+            return new WP_Error('db_error', 'Failed to delete working day');
+        }
+        
+        return true;
+    }
+
+    /**
      * Get database info
      *
      * @since    1.0.0

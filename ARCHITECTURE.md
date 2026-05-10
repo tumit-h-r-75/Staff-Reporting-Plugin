@@ -75,7 +75,7 @@ CREATE TABLE wp_staff_salary_settings (
     user_id BIGINT(20) UNSIGNED NOT NULL,
     monthly_salary DECIMAL(10,2) NOT NULL DEFAULT 0.00,
     working_days_per_month INT(11) NOT NULL DEFAULT 22,
-    daily_rate DECIMAL(10,2) GENERATED ALWAYS AS (monthly_salary / working_days_per_month) STORED,
+    daily_rate DECIMAL(10,2) NOT NULL DEFAULT 0.00,
     currency VARCHAR(3) NOT NULL DEFAULT 'CAD',
     effective_from DATE NOT NULL,
     effective_to DATE NULL,

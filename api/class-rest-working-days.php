@@ -10,6 +10,9 @@
  * @author     Tumit <tumit@bassmah.ca>
  */
 
+// Include Database Manager class
+require_once plugin_dir_path(__FILE__) . '../includes/class-database-manager.php';
+
 if (!class_exists('Bassmah_Staff_Reports_REST_Working_Days')) {
     class Bassmah_Staff_Reports_REST_Working_Days {
 
