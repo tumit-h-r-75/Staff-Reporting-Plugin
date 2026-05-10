@@ -264,7 +264,7 @@ if (!class_exists('Bassmah_Staff_Reports_REST_Report_Approvals')) {
     public function get_pending_reports($request) {
         global $wpdb;
         $table_name = $wpdb->prefix . 'staff_reports';
-        $users_table = $wpdb->users;
+        $users_table = $wpdb->prefix . 'users';
 
         $limit = intval($request->get_param('limit')) ?: 20;
         $offset = intval($request->get_param('offset')) ?: 0;
@@ -305,7 +305,7 @@ if (!class_exists('Bassmah_Staff_Reports_REST_Report_Approvals')) {
             $count_query .= " AND user_id = %d";
             $total = $wpdb->get_var($wpdb->prepare($count_query, $user_id));
         } else {
-            $total = $wpdb->get_var($wpdb->prepare($count_query));
+            $total = $wpdb->get_var($count_query);
         }
 
         // Format reports
