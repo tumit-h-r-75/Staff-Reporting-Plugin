@@ -54,6 +54,36 @@ class Bassmah_Staff_Reports_Report {
             );
         }
 
+        // Validate tasks data
+        if (empty($data['tasks']) || !is_array($data['tasks'])) {
+            return new WP_Error(
+                'invalid_tasks',
+                __('Tasks data is required and must be an array.', 'bassmah-staff-reports'),
+                array('status' => 400)
+            );
+        }
+
+        $required_fields = array('task_category', 'task_description', 'completion_status', 'next_action');
+        foreach ($data['tasks'] as $index => $task) {
+            if (!is_array($task)) {
+                return new WP_Error(
+                    'invalid_task_structure',
+                    sprintf(__('Task %d must be an array.', 'bassmah-staff-reports'), $index + 1),
+                    array('status' => 400)
+                );
+            }
+            
+            foreach ($required_fields as $field) {
+                if (empty($task[$field])) {
+                    return new WP_Error(
+                        'missing_task_field',
+                        sprintf(__('Task %d is missing required field: %s', 'bassmah-staff-reports'), $index + 1, $field),
+                        array('status' => 400)
+                    );
+                }
+            }
+        }
+
         // Prepare data for insertion
         $report_data = array(
             'user_id' => intval($data['user_id']),
@@ -92,10 +122,11 @@ class Bassmah_Staff_Reports_Report {
      * @param array $data
      * @return bool|WP_Error
      */
-    public function update_report($report_id, $data) {
+    public function update_report($report_id, $data, $cached_report = null) {
         global $wpdb;
 
-        $report = $this->get_report($report_id);
+        // Use cached report data if provided to avoid double DB query
+        $report = $cached_report ?: $this->get_report($report_id);
         if (!$report) {
             return new WP_Error(
                 'report_not_found',

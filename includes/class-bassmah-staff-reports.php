@@ -64,6 +64,8 @@ if (!class_exists('Bassmah_Staff_Reports')) {
         $this->define_admin_hooks();
         $this->define_public_hooks();
         $this->define_api_hooks();
+        $this->define_jwt_hooks();
+        $this->define_cron_hooks();
     }
 
     /**
@@ -158,7 +160,7 @@ if (!class_exists('Bassmah_Staff_Reports')) {
         $rest_reports = new Bassmah_Staff_Reports_REST_Reports();
         $this->loader->add_action( 'rest_api_init', $rest_reports, 'register_routes' );
 
-        $rest_approvals = new Bassmah_Staff_Reports_REST_Approvals();
+        $rest_approvals = new Bassmah_Staff_Reports_REST_Report_Approvals();
         $this->loader->add_action( 'rest_api_init', $rest_approvals, 'register_routes' );
 
         $rest_salary = new Bassmah_Staff_Reports_REST_Salary();
@@ -166,6 +168,49 @@ if (!class_exists('Bassmah_Staff_Reports')) {
 
         $rest_export = new Bassmah_Staff_Reports_REST_Export();
         $this->loader->add_action( 'rest_api_init', $rest_export, 'register_routes' );
+        
+        $rest_working_days = new Bassmah_Staff_Reports_REST_Working_Days();
+        $this->loader->add_action( 'rest_api_init', $rest_working_days, 'register_routes' );
+    }
+
+    /**
+     * Register all of the hooks related to JWT authentication
+     * of the plugin.
+     *
+     * @since    1.0.0
+     * @access   private
+     */
+    private function define_jwt_hooks() {
+        $jwt_auth = new Bassmah_Staff_Reports_JWT_Auth();
+        $jwt_auth->define_jwt_hooks();
+    }
+
+    /**
+     * Register all of the hooks related to cron jobs
+     * of the plugin.
+     *
+     * @since    1.0.0
+     * @access   private
+     */
+    private function define_cron_hooks() {
+        // Schedule daily reminder if not already scheduled
+        if (!wp_next_scheduled('bassmah_daily_reminder')) {
+            $reminder_time = get_option('bassmah_reminder_time', '09:00');
+            $time_parts = explode(':', $reminder_time);
+            $hour = isset($time_parts[0]) ? (int)$time_parts[0] : 9;
+            $minute = isset($time_parts[1]) ? (int)$time_parts[1] : 0;
+            
+            // Schedule for today at specified time
+            $timestamp = strtotime('today ' . $hour . ':' . $minute . ':00');
+            if ($timestamp < time()) {
+                $timestamp = strtotime('tomorrow ' . $hour . ':' . $minute . ':00');
+            }
+            
+            wp_schedule_event($timestamp, 'daily', 'bassmah_daily_reminder');
+        }
+        
+        // Hook the reminder function
+        $this->loader->add_action('bassmah_daily_reminder', $this, 'send_daily_reminder');
     }
 
     /**
@@ -186,6 +231,55 @@ if (!class_exists('Bassmah_Staff_Reports')) {
      */
     public function get_plugin_name() {
         return $this->plugin_name;
+    }
+
+    /**
+     * Send daily reminder emails to staff
+     *
+     * @since    1.0.0
+     */
+    public function send_daily_reminder() {
+        global $wpdb;
+        
+        // Get all staff users who haven't submitted today's report
+        $table_reports = $wpdb->prefix . 'staff_reports';
+        $today = current_time('Y-m-d');
+        
+        $query = $wpdb->prepare("
+            SELECT u.ID, u.user_email, u.display_name
+            FROM {$wpdb->users} u
+            WHERE u.ID IN (
+                SELECT user_id FROM {$wpdb->usermeta} 
+                WHERE meta_key = '{$wpdb->prefix}capabilities' 
+                AND meta_value LIKE '%\"bassmah_staff\"%'
+            )
+            AND u.ID NOT IN (
+                SELECT DISTINCT user_id FROM $table_reports 
+                WHERE report_date = %s 
+                AND status IN ('submitted', 'approved')
+            )
+        ", $today);
+        
+        $staff_members = $wpdb->get_results($query);
+        
+        foreach ($staff_members as $staff) {
+            $subject = __('Daily Report Reminder', 'bassmah-staff-reports');
+            $message = sprintf(
+                __('Hi %s,
+
+This is a friendly reminder to submit your daily work report for today (%s).
+
+Please log in to the system and submit your report before the end of the day.
+
+Thank you,
+Bassmah Team', 'bassmah-staff-reports'),
+                $staff->display_name,
+                $today
+            );
+            
+            $headers = array('Content-Type: text/html; charset=UTF-8');
+            wp_mail($staff->user_email, $subject, $message, $headers);
+        }
     }
 
     /**

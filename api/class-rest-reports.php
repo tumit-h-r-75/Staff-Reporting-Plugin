@@ -80,6 +80,12 @@ if (!class_exists('Bassmah_Staff_Reports_REST_Reports')) {
                         'default' => 0,
                         'description' => __('Number of reports to skip', 'bassmah-staff-reports'),
                     ),
+                    'role' => array(
+                        'required' => false,
+                        'type' => 'string',
+                        'description' => __('Filter by user role (bassmah_staff, bassmah_manager)', 'bassmah-staff-reports'),
+                        'sanitize_callback' => 'sanitize_text_field'
+                    ),
                 ),
             ),
         ));
@@ -266,6 +272,7 @@ if (!class_exists('Bassmah_Staff_Reports_REST_Reports')) {
             'status' => $request->get_param('status'),
             'date_from' => $request->get_param('date_from'),
             'date_to' => $request->get_param('date_to'),
+            'role' => $request->get_param('role'),
             'limit' => $request->get_param('limit'),
             'offset' => $request->get_param('offset'),
             'orderby' => 'submission_time',
@@ -357,8 +364,11 @@ if (!class_exists('Bassmah_Staff_Reports_REST_Reports')) {
             $update_data['tasks'] = $tasks;
         }
 
+        // Use cached report data from permission check to avoid double DB query
+        $cached_report = $request->get_param('cached_report');
+        
         $report_class = new Bassmah_Staff_Reports_Report();
-        $result = $report_class->update_report($report_id, $update_data);
+        $result = $report_class->update_report($report_id, $update_data, $cached_report);
 
         if (is_wp_error($result)) {
             return $result;
@@ -537,10 +547,13 @@ if (!class_exists('Bassmah_Staff_Reports_REST_Reports')) {
 
         // Users can update their own reports, managers can update any report
         if ($report->user_id === get_current_user_id()) {
-            return current_user_can('bassmah_view_own_reports');
+            return true;
         }
 
-        return current_user_can('bassmah_view_all_reports');
+        // Store report data in request to avoid double DB query
+        $request->set_param('cached_report', $report);
+
+        return current_user_can('bassmah_update_all_reports');
     }
 
     /**
@@ -585,6 +598,5 @@ if (!class_exists('Bassmah_Staff_Reports_REST_Reports')) {
             'updated_at' => $report->updated_at,
         );
     }
-}
 }
 }

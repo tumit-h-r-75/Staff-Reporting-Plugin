@@ -69,6 +69,10 @@ if (!class_exists('Bassmah_Staff_Reports_REST_Export')) {
          * @return    bool|WP_Error
          */
         public function export_permission_check() {
+            $login_check = Bassmah_Staff_Reports_Roles::require_login();
+            if (is_wp_error($login_check)) {
+                return $login_check;
+            }
             return current_user_can('bassmah_export_reports');
         }
 

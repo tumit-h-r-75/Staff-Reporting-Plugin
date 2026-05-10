@@ -69,17 +69,23 @@ class Bassmah_Staff_Reports_Salary {
             }
         }
 
+        // Calculate daily_rate from monthly_salary and working_days_per_month
+        $monthly_salary = floatval($salary_data['monthly_salary']);
+        $working_days = intval($salary_data['working_days_per_month']);
+        $daily_rate = $working_days > 0 ? round($monthly_salary / $working_days, 2) : 0.00;
+        
         $settings = array(
             'user_id' => intval($user_id),
-            'monthly_salary' => floatval($salary_data['monthly_salary']),
-            'working_days_per_month' => intval($salary_data['working_days_per_month']),
+            'monthly_salary' => $monthly_salary,
+            'working_days_per_month' => $working_days,
+            'daily_rate' => $daily_rate,
             'currency' => isset($salary_data['currency']) ? $salary_data['currency'] : 'CAD',
             'effective_from' => $salary_data['effective_from'],
             'created_by' => get_current_user_id(),
             'updated_at' => current_time('mysql')
         );
 
-        $result = $wpdb->insert($this->salary_table, $settings, array('%d', '%f', '%d', '%s', '%s', '%d', '%s'));
+        $result = $wpdb->insert($this->salary_table, $settings, array('%d', '%f', '%d', '%f', '%s', '%s', '%d', '%s'));
 
         if ($result === false) {
             return new WP_Error(
@@ -239,25 +245,49 @@ class Bassmah_Staff_Reports_Salary {
     }
 
     /**
-     * Generate default working days (weekdays) for a month
-     *
-     * @param string $month
-     * @return array
-     */
-    private function generate_default_working_days($month) {
         $working_days = array();
+        
         $start_date = new DateTime($month . '-01');
         $end_date = new DateTime(date('Y-m-t', strtotime($month . '-01')));
 
+        // Get holidays for the month
+        $holidays = $this->get_holidays_in_month($month);
+
         while ($start_date <= $end_date) {
             $day_of_week = $start_date->format('N'); // 1 (Monday) to 7 (Sunday)
-            if ($day_of_week <= 5) { // Monday to Friday
-                $working_days[] = $start_date->format('Y-m-d');
+            $current_date = $start_date->format('Y-m-d');
+            
+            // Include Monday to Friday that are not holidays
+            if ($day_of_week <= 5 && !in_array($current_date, $holidays)) {
+                $working_days[] = $current_date;
             }
             $start_date->add(new DateInterval('P1D'));
         }
 
         return $working_days;
+    }
+
+    /**
+     * Get holidays for a month
+     *
+     * @param string $month
+     * @return array
+     */
+    private function get_holidays_in_month($month) {
+        global $wpdb;
+        
+        $table_working_days = $wpdb->prefix . 'staff_working_days';
+        $holidays = array();
+        
+        $query = $wpdb->prepare("
+            SELECT work_date FROM $table_working_days 
+            WHERE work_date LIKE %s 
+            AND is_holiday = 1
+        ", $month . '-%');
+        
+        $results = $wpdb->get_col($query);
+        
+        return $results ?: array();
     }
 
     /**

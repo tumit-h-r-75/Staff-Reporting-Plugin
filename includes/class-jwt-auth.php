@@ -14,9 +14,13 @@ if (!class_exists('Bassmah_Staff_Reports_JWT_Auth')) {
         
         public function __construct() {
             $this->secret_key = $this->get_secret_key();
-            $this->token_expire_time = 3600; // 1 hour
-            
-            // Add hooks
+            $this->token_expire_time = 28800; // 8 hours (full working day)
+        }
+        
+        /**
+         * Define JWT hooks
+         */
+        public function define_jwt_hooks() {
             add_action('wp_login', array($this, 'generate_jwt_token_on_login'), 10, 2);
             add_action('wp_logout', array($this, 'revoke_jwt_token'));
             add_action('wp_ajax_bassmah_get_jwt_token', array($this, 'get_jwt_token'));
@@ -196,7 +200,7 @@ if (!class_exists('Bassmah_Staff_Reports_JWT_Auth')) {
             // Check for Bearer token
             if (strpos($auth_header, 'Bearer ') === false) {
                 // Check for token in POST data as fallback
-                return isset($_POST['jwt_token']) ? $_POST['jwt_token'] : '';
+                return isset($_POST['jwt_token']) ? sanitize_text_field($_POST['jwt_token']) : '';
             }
             
             return str_replace('Bearer ', '', $auth_header);

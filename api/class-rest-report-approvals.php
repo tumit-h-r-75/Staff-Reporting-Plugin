@@ -9,8 +9,8 @@
  * @package    Bassmah_Staff_Reports
  * @author     Tumit <tumit@bassmah.ca>
  */
-if (!class_exists('Bassmah_Staff_Reports_REST_Approvals')) {
-    class Bassmah_Staff_Reports_REST_Approvals {
+if (!class_exists('Bassmah_Staff_Reports_REST_Report_Approvals')) {
+    class Bassmah_Staff_Reports_REST_Report_Approvals {
 
     /**
      * Report model used for approval actions.

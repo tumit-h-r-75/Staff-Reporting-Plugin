@@ -46,7 +46,7 @@ class Bassmah_Staff_Reports_Database_Manager {
     public function __construct() {
         global $wpdb;
         $this->wpdb = $wpdb;
-        $this->prefix = $wpdb->prefix . 'bassmah_';
+        $this->prefix = $wpdb->prefix . 'staff_';
     }
 
     /**

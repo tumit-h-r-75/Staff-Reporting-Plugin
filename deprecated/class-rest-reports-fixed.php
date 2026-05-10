@@ -4,7 +4,7 @@
  *
  * @since      1.0.0
  * @package    Bassmah_Staff_Reports
- * @author     Tumit <tumit@bassmah.ca>
+ * @author     Tumit <tumit.exprovia@gmail.com>
  */
 class Bassmah_Staff_Reports_REST_Reports {
 
