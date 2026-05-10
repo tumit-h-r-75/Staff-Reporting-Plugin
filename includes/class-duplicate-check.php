@@ -27,7 +27,7 @@ if (!class_exists('Bassmah_Staff_Reports_Duplicate_Check')) {
             
             $count = $wpdb->get_var($wpdb->prepare(
                 "SELECT COUNT(*) FROM {$table_name} 
-                 WHERE user_id = %d AND report_date = %s",
+                 WHERE user_id = %d AND report_date = %s AND status != 'rejected'",
                 $user_id,
                 $today
             ));
@@ -50,7 +50,7 @@ if (!class_exists('Bassmah_Staff_Reports_Duplicate_Check')) {
             
             return $wpdb->get_row($wpdb->prepare(
                 "SELECT * FROM {$table_name} 
-                 WHERE user_id = %d AND report_date = %s",
+                 WHERE user_id = %d AND report_date = %s AND status != 'rejected'",
                 $user_id,
                 $today
             ));

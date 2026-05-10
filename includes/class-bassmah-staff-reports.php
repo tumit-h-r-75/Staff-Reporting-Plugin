@@ -98,6 +98,7 @@ if (!class_exists('Bassmah_Staff_Reports')) {
         require_once BASSMAH_STAFF_REPORTS_PLUGIN_DIR . 'api/class-rest-report-approvals.php';
         require_once BASSMAH_STAFF_REPORTS_PLUGIN_DIR . 'api/class-rest-salary.php';
         require_once BASSMAH_STAFF_REPORTS_PLUGIN_DIR . 'api/class-rest-export.php';
+        require_once BASSMAH_STAFF_REPORTS_PLUGIN_DIR . 'api/class-rest-working-days.php';
 
         $this->loader = new Bassmah_Staff_Reports_Loader();
     }

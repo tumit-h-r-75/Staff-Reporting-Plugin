@@ -1,0 +1,27 @@
+# Composer dependencies
+vendor/
+composer.lock
+
+# IDE
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+.env
+.env.local
+
+# WordPress
+wp-content/
+wp-admin/
+wp-includes/
+wp-config.php
+wp-settings.php
+
+# Temp files
+*.tmp
+*.temp
+*.log

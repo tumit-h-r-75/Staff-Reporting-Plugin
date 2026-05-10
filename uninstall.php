@@ -22,6 +22,7 @@ global $wpdb;
 $table_reports = $wpdb->prefix . 'staff_reports';
 $table_salary_settings = $wpdb->prefix . 'staff_salary_settings';
 $table_working_days = $wpdb->prefix . 'staff_working_days';
+$table_salary_history = $wpdb->prefix . 'staff_salary_history';
 
 // Option: Keep data or remove completely
 $keep_data = get_option('bassmah_keep_data_on_uninstall', false);
@@ -31,6 +32,7 @@ if (!$keep_data) {
     $wpdb->query("DROP TABLE IF EXISTS $table_reports");
     $wpdb->query("DROP TABLE IF EXISTS $table_salary_settings");
     $wpdb->query("DROP TABLE IF EXISTS $table_working_days");
+    $wpdb->query("DROP TABLE IF EXISTS $table_salary_history");
     
     // Remove plugin options
     $options = array(
@@ -41,7 +43,8 @@ if (!$keep_data) {
         'bassmah_default_working_days',
         'bassmah_reminder_time',
         'bassmah_version',
-        'bassmah_keep_data_on_uninstall'
+        'bassmah_keep_data_on_uninstall',
+        'bassmah_jwt_secret_key'
     );
     
     foreach ($options as $option) {

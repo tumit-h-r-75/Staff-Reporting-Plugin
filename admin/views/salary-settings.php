@@ -61,6 +61,7 @@ if ($_POST && isset($_POST['save_salary_settings'])) {
         $user_id = intval($_POST['user_id']);
         $monthly_salary = floatval($_POST['monthly_salary']);
         $working_days = intval($_POST['working_days_per_month']);
+        $daily_rate = $working_days > 0 ? round($monthly_salary / $working_days, 2) : 0.00;
         $currency = sanitize_text_field($_POST['currency']);
         $effective_from = sanitize_text_field($_POST['effective_from']);
 
@@ -77,11 +78,12 @@ if ($_POST && isset($_POST['save_salary_settings'])) {
                 array(
                     'monthly_salary' => $monthly_salary,
                     'working_days_per_month' => $working_days,
+                    'daily_rate' => $daily_rate,
                     'currency' => $currency,
                     'updated_at' => current_time('mysql')
                 ),
                 array('id' => $existing->id),
-                array('%f', '%d', '%s', '%s'),
+                array('%f', '%d', '%f', '%s', '%s'),
                 array('%d')
             );
         } else {
@@ -92,12 +94,13 @@ if ($_POST && isset($_POST['save_salary_settings'])) {
                     'user_id' => $user_id,
                     'monthly_salary' => $monthly_salary,
                     'working_days_per_month' => $working_days,
+                    'daily_rate' => $daily_rate,
                     'currency' => $currency,
                     'effective_from' => $effective_from,
                     'created_by' => $current_user->ID,
                     'updated_at' => current_time('mysql')
                 ),
-                array('%d', '%f', '%d', '%s', '%s', '%d', '%s')
+                array('%d', '%f', '%d', '%f', '%s', '%s', '%d', '%s')
             );
         }
 
@@ -114,10 +117,12 @@ $staff_users = get_users(array(
 // Get existing salary settings
 if ($salary_table_ready) {
     $salary_settings = $wpdb->get_results(
-        "SELECT s.*, u.display_name, u.user_email 
-         FROM $salary_table s 
-         LEFT JOIN {$wpdb->users} u ON s.user_id = u.ID 
-         ORDER BY u.display_name, s.effective_from DESC"
+        $wpdb->prepare(
+            "SELECT s.*, u.display_name, u.user_email 
+             FROM {$salary_table} s 
+             LEFT JOIN {$wpdb->users} u ON s.user_id = u.ID 
+             ORDER BY u.display_name, s.effective_from DESC"
+        )
     );
 } else {
     $salary_settings = array();

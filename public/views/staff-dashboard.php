@@ -36,6 +36,16 @@ $recent_reports = $report_class->get_my_reports(array(
     'orderby' => 'report_date',
     'order' => 'DESC'
 ));
+
+$current_month_start = date('Y-m-01', current_time('timestamp'));
+$current_month_end = date('Y-m-t', current_time('timestamp'));
+$monthly_calendar_reports = $report_class->get_my_reports(array(
+    'date_from' => $current_month_start,
+    'date_to' => $current_month_end,
+    'orderby' => 'report_date',
+    'order' => 'ASC',
+    'limit' => 31,
+));
 ?>
 
 <div class="bassmah-staff-dashboard">
@@ -262,6 +272,45 @@ $recent_reports = $report_class->get_my_reports(array(
         </div>
         <div class="bassmah-modal-body">
             <?php echo do_shortcode('[bassmah_report_form]'); ?>
+        </div>
+    </div>
+</div>
+
+<!-- Calendar Modal -->
+<div id="bassmah-calendar-modal" class="bassmah-modal" style="display: none;">
+    <div class="bassmah-modal-content bassmah-calendar-content">
+        <div class="bassmah-modal-header">
+            <h3><?php _e('Monthly Report Calendar', 'bassmah-staff-reports'); ?></h3>
+            <button class="bassmah-modal-close" onclick="hideCalendar()">&times;</button>
+        </div>
+        <div class="bassmah-modal-body">
+            <p><?php printf(__('Showing reports from %s to %s', 'bassmah-staff-reports'), date_i18n('F j, Y', strtotime($current_month_start)), date_i18n('F j, Y', strtotime($current_month_end))); ?></p>
+            <table class="bassmah-calendar-table">
+                <thead>
+                    <tr>
+                        <th><?php _e('Date', 'bassmah-staff-reports'); ?></th>
+                        <th><?php _e('Status', 'bassmah-staff-reports'); ?></th>
+                        <th><?php _e('Tasks', 'bassmah-staff-reports'); ?></th>
+                        <th><?php _e('Manager Comment', 'bassmah-staff-reports'); ?></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if (!empty($monthly_calendar_reports)): ?>
+                        <?php foreach ($monthly_calendar_reports as $calendar_report): ?>
+                            <tr>
+                                <td><?php echo esc_html(date_i18n('F j, Y', strtotime($calendar_report->report_date))); ?></td>
+                                <td><?php echo esc_html(ucfirst($calendar_report->status)); ?></td>
+                                <td><?php echo esc_html(implode(', ', wp_list_pluck(json_decode($calendar_report->tasks_json, true) ?: array(), 'task_description'))); ?></td>
+                                <td><?php echo esc_html($calendar_report->manager_comment); ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <tr>
+                            <td colspan="4"><?php _e('No reports found for this month.', 'bassmah-staff-reports'); ?></td>
+                        </tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
@@ -601,6 +650,23 @@ $recent_reports = $report_class->get_my_reports(array(
     padding: 20px;
 }
 
+.bassmah-calendar-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.bassmah-calendar-table th,
+.bassmah-calendar-table td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: left;
+}
+
+.bassmah-calendar-table th {
+    background: #f7f7f7;
+}
+
 @media (max-width: 768px) {
     .bassmah-dashboard-grid {
         grid-template-columns: 1fr;
@@ -649,15 +715,24 @@ function exportSalaryHistory() {
 }
 
 function viewCalendar() {
-    // Implementation to view calendar
-    console.log('View calendar');
+    document.getElementById('bassmah-calendar-modal').style.display = 'block';
+    document.body.style.overflow = 'hidden';
+}
+
+function hideCalendar() {
+    document.getElementById('bassmah-calendar-modal').style.display = 'none';
+    document.body.style.overflow = 'auto';
 }
 
 // Close modal when clicking outside
 window.onclick = function(event) {
-    const modal = document.getElementById('bassmah-report-modal');
-    if (event.target == modal) {
+    const reportModal = document.getElementById('bassmah-report-modal');
+    const calendarModal = document.getElementById('bassmah-calendar-modal');
+    if (event.target == reportModal) {
         hideReportForm();
+    }
+    if (event.target == calendarModal) {
+        hideCalendar();
     }
 }
 </script>

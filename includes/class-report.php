@@ -266,6 +266,20 @@ class Bassmah_Staff_Reports_Report {
             $where_values[] = $args['date_to'];
         }
 
+        if (!empty($args['role'])) {
+            $role = sanitize_text_field($args['role']);
+            $users_in_role = get_users(array(
+                'role' => $role,
+                'fields' => 'ID'
+            ));
+            if (!empty($users_in_role)) {
+                $ids = implode(',', array_map('intval', $users_in_role));
+                $where_conditions[] = "user_id IN ($ids)";
+            } else {
+                $where_conditions[] = '1=0';
+            }
+        }
+
         $where_clause = '';
         if (!empty($where_conditions)) {
             $where_clause = 'WHERE ' . implode(' AND ', $where_conditions);
@@ -542,6 +556,43 @@ class Bassmah_Staff_Reports_Report {
         $count = $wpdb->get_var("SELECT COUNT(*) FROM {$this->table_name} $where");
         
         return intval($count);
+    }
+
+    /**
+     * Get count of reports for pagination and list totals
+     *
+     * @param array $args
+     * @return int
+     */
+    public function get_reports_count($args = array()) {
+        global $wpdb;
+        $where_clauses = array('1=1');
+        $params = array();
+
+        if (!empty($args['user_id'])) {
+            $where_clauses[] = 'user_id = %d';
+            $params[] = intval($args['user_id']);
+        }
+        if (!empty($args['status'])) {
+            $where_clauses[] = 'status = %s';
+            $params[] = sanitize_text_field($args['status']);
+        }
+        if (!empty($args['date_from'])) {
+            $where_clauses[] = 'report_date >= %s';
+            $params[] = $args['date_from'];
+        }
+        if (!empty($args['date_to'])) {
+            $where_clauses[] = 'report_date <= %s';
+            $params[] = $args['date_to'];
+        }
+
+        $where = implode(' AND ', $where_clauses);
+        $sql = "SELECT COUNT(*) FROM {$this->table_name} WHERE $where";
+
+        if (!empty($params)) {
+            $sql = $wpdb->prepare($sql, $params);
+        }
+        return (int) $wpdb->get_var($sql);
     }
 
     /**

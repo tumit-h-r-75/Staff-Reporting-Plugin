@@ -150,9 +150,10 @@ $stats = $report_class->get_manager_statistics($args);
             <button class="button" onclick="exportSalarySummary()">
                 <?php _e('Export Salary Summary (CSV)', 'bassmah-staff-reports'); ?>
             </button>
-            <button class="button" onclick="exportToExcel()">
+            <!-- Excel export disabled until phpoffice/phpspreadsheet is installed via composer install -->
+            <!-- <button class="button" onclick="exportToExcel()">
                 <?php _e('Export to Excel', 'bassmah-staff-reports'); ?>
-            </button>
+            </button> -->
         </div>
     </div>
 

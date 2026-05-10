@@ -455,7 +455,7 @@ global $wpdb;
         const dateTo = $('#filter-date-to').val() || '';
 
         $.ajax({
-            url: '/wp-json/bassmah/v2/reports/pending',
+            url: '/wp-json/bassmah/v1/reports/pending',
             method: 'GET',
             data: {
                 limit: itemsPerPage,
@@ -585,7 +585,7 @@ global $wpdb;
 
     function showReportDetails(reportId, action) {
         $.ajax({
-            url: `/wp-json/bassmah/v2/reports/${reportId}`,
+            url: `/wp-json/bassmah/v1/reports/${reportId}`,
             method: 'GET',
             headers: {
                 'X-WP-Nonce': '<?php echo wp_create_nonce('wp_rest'); ?>'
@@ -635,7 +635,7 @@ global $wpdb;
 
     function approveReport(reportId, comment) {
         $.ajax({
-            url: `/wp-json/bassmah/v2/reports/${reportId}/approve`,
+            url: `/wp-json/bassmah/v1/reports/${reportId}/approve`,
             method: 'POST',
             headers: {
                 'X-WP-Nonce': '<?php echo wp_create_nonce('wp_rest'); ?>',
@@ -665,7 +665,7 @@ global $wpdb;
 
     function rejectReport(reportId, reason) {
         $.ajax({
-            url: `/wp-json/bassmah/v2/reports/${reportId}/reject`,
+            url: `/wp-json/bassmah/v1/reports/${reportId}/reject`,
             method: 'POST',
             headers: {
                 'X-WP-Nonce': '<?php echo wp_create_nonce('wp_rest'); ?>',

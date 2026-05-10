@@ -52,7 +52,7 @@ if (!empty($where_conditions)) {
 }
 
 // Query reports
-$table_name = $wpdb->prefix . 'bassmah_staff_reports';
+$table_name = $wpdb->prefix . 'staff_reports';
 $query = "
     SELECT r.*, u.display_name, u.user_email, u.user_login 
     FROM {$table_name} r 
@@ -308,7 +308,7 @@ $users = get_users(array(
 <script>
 function exportReports() {
     var format = document.getElementById('export-format').value;
-    var url = '/wp-json/bassmah/v2/reports/export?format=' + format;
+    var url = bassmah_admin.rest_url + 'reports/export?format=' + format;
     
     // Add current filters to URL
     var userId = document.getElementById('user_id') ? document.getElementById('user_id').value : '';

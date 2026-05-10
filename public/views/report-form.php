@@ -73,7 +73,7 @@ if ($duplicate_check->has_today_report($current_user->ID)) {
                        class="bassmah-form-input" 
                        value="<?php echo esc_attr($current_user->display_name); ?>" 
                        <?php echo $has_duplicate ? 'readonly disabled' : 'readonly'; ?>
-                aria-required="true">
+                       aria-required="true">
             </div>
             <div>
                 <label class="bassmah-form-label" for="employee_role">
@@ -84,7 +84,7 @@ if ($duplicate_check->has_today_report($current_user->ID)) {
                        class="bassmah-form-input" 
                        value="<?php echo esc_html(Bassmah_Staff_Reports_Roles::get_user_role_display($current_user->ID)); ?>" 
                        readonly 
-                       disabled 
+                       disabled
                        aria-required="true">
             </div>
         </div>
@@ -99,7 +99,7 @@ if ($duplicate_check->has_today_report($current_user->ID)) {
                    class="bassmah-form-input bassmah-datepicker" 
                    value="<?php echo current_time('Y-m-d'); ?>" 
                    readonly 
-                   disabled 
+                   disabled
                    aria-required="true">
             <small><?php _e('Only today\'s date is allowed for report submission.', 'bassmah-staff-reports'); ?></small>
         </div>

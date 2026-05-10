@@ -113,6 +113,15 @@ if (!class_exists('Bassmah_Staff_Reports_Exporter')) {
         public function export_reports_to_excel($filters = array()) {
             global $wpdb;
             
+            // Check if PhpSpreadsheet is available
+            if (!class_exists('PhpOffice\PhpSpreadsheet\Spreadsheet')) {
+                return new WP_Error(
+                    'missing_library',
+                    __('PhpSpreadsheet library is not installed. Please run: composer require phpoffice/phpspreadsheet', 'bassmah-staff-reports'),
+                    array('status' => 500)
+                );
+            }
+            
             $table_reports = $wpdb->prefix . 'staff_reports';
             $table_users = $wpdb->users;
             
@@ -147,29 +156,32 @@ if (!class_exists('Bassmah_Staff_Reports_Exporter')) {
                 $params ? $wpdb->prepare($query, $params) : $query
             );
             
-            // Create Excel file using PHP's built-in functions
-            $filename = 'staff_reports_' . date('Y-m-d') . '.xlsx';
-            $filepath = tempnam(sys_get_temp_dir(), 'excel_');
+            // Create Excel file using PhpSpreadsheet
+            $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+            $sheet = $spreadsheet->getActiveSheet();
             
-            // Create a simple Excel file using HTML table format (Excel can open HTML tables)
-            $html = '<html><head><meta charset="UTF-8"><title>Staff Reports</title></head><body>';
-            $html .= '<table border="1">';
+            // Set headers
+            $headers = array(
+                __('Report ID', 'bassmah-staff-reports'),
+                __('Employee Name', 'bassmah-staff-reports'),
+                __('Email', 'bassmah-staff-reports'),
+                __('Role', 'bassmah-staff-reports'),
+                __('Report Date', 'bassmah-staff-reports'),
+                __('Submission Time', 'bassmah-staff-reports'),
+                __('Status', 'bassmah-staff-reports'),
+                __('Tasks', 'bassmah-staff-reports'),
+                __('Manager Comment', 'bassmah-staff-reports'),
+                __('IP Address', 'bassmah-staff-reports')
+            );
             
-            // Headers
-            $html .= '<tr>
-                <th>ID</th>
-                <th>Employee Name</th>
-                <th>Email</th>
-                <th>Role</th>
-                <th>Report Date</th>
-                <th>Submission Time</th>
-                <th>Status</th>
-                <th>Tasks</th>
-                <th>Manager Comment</th>
-                <th>IP Address</th>
-            </tr>';
+            $col = 1;
+            foreach ($headers as $header) {
+                $sheet->setCellValueByColumnAndRow($col, 1, $header);
+                $col++;
+            }
             
-            // Data rows
+            // Add data rows
+            $row = 2;
             foreach ($reports as $report) {
                 $tasks = json_decode($report->tasks_json, true);
                 $task_descriptions = array();
@@ -182,24 +194,38 @@ if (!class_exists('Bassmah_Staff_Reports_Exporter')) {
                 
                 $task_list = implode('; ', $task_descriptions);
                 
-                $html .= '<tr>
-                    <td>' . esc_html($report->id) . '</td>
-                    <td>' . esc_html($report->display_name) . '</td>
-                    <td>' . esc_html($report->user_email) . '</td>
-                    <td>' . esc_html(Bassmah_Staff_Reports_Roles::get_user_role_display($report->user_id)) . '</td>
-                    <td>' . esc_html($report->report_date) . '</td>
-                    <td>' . esc_html($report->submission_time) . '</td>
-                    <td>' . esc_html($report->status) . '</td>
-                    <td>' . esc_html($task_list) . '</td>
-                    <td>' . esc_html($report->manager_comment) . '</td>
-                    <td>' . esc_html($report->ip_address) . '</td>
-                </tr>';
+                $col = 1;
+                $data = array(
+                    $report->id,
+                    $report->display_name,
+                    $report->user_email,
+                    Bassmah_Staff_Reports_Roles::get_user_role_display($report->user_id),
+                    $report->report_date,
+                    $report->submission_time,
+                    $report->status,
+                    $task_list,
+                    $report->manager_comment,
+                    $report->ip_address
+                );
+                
+                foreach ($data as $value) {
+                    $sheet->setCellValueByColumnAndRow($col, $row, $value);
+                    $col++;
+                }
+                $row++;
             }
             
-            $html .= '</table></body></html>';
+            // Auto-fit columns
+            foreach (range(1, count($headers)) as $col) {
+                $sheet->getColumnDimensionByColumn($col)->setAutoSize(true);
+            }
             
             // Write to file
-            file_put_contents($filepath, $html);
+            $filename = 'staff_reports_' . date('Y-m-d_His') . '.xlsx';
+            $filepath = tempnam(sys_get_temp_dir(), 'excel_');
+            
+            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+            $writer->save($filepath);
             
             // Read file content
             $content = file_get_contents($filepath);

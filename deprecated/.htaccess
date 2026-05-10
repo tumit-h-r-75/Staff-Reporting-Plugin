@@ -1,8 +1,0 @@
-# Deny direct access to all files in deprecated folder
-<Files "*">
-    Order Deny,Allow
-    Deny from all
-</Files>
-
-# Optional: Block directory listing
-Options -Indexes
