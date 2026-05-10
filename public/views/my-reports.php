@@ -51,7 +51,7 @@ $total_pages = ceil($total_reports / $per_page);
             <button class="button" onclick="exportReports()">
                 <?php _e('Export Reports', 'bassmah-staff-reports'); ?>
             </button>
-            <a href="<?php echo home_url(); ?>/?bassmah_action=dashboard" class="button">
+            <a href="<?php echo home_url('/dashboard/'); ?>" class="button">
                 <?php _e('Back to Dashboard', 'bassmah-staff-reports'); ?>
             </a>
         </div>
@@ -243,7 +243,7 @@ $total_pages = ceil($total_reports / $per_page);
                 <h3><?php _e('No Reports Found', 'bassmah-staff-reports'); ?></h3>
                 <p><?php _e('No reports found matching your criteria.', 'bassmah-staff-reports'); ?></p>
                 <?php if (date('Y-m-d') >= $date_from && date('Y-m-d') <= $date_to): ?>
-                    <a href="<?php echo home_url(); ?>/?bassmah_action=dashboard" class="button button-primary">
+                    <a href="<?php echo home_url('/report/'); ?>" class="button button-primary">
                         <?php _e('Submit Today\'s Report', 'bassmah-staff-reports'); ?>
                     </a>
                 <?php endif; ?>
@@ -528,7 +528,7 @@ function exportReports() {
     const formData = new FormData(form);
     const params = new URLSearchParams(formData);
     
-    window.open(bassmah_public.ajax_url + '?action=bassmah_export_reports&' + params.toString());
+    window.open(admin_url('admin-ajax.php') + '?action=bassmah_export_reports&' + params.toString());
 }
 
 // Close modal when clicking outside

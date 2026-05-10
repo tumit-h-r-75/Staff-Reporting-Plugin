@@ -701,8 +701,8 @@ function viewReport(reportId) {
 }
 
 function viewAllReports() {
-    // Redirect to reports page or load via AJAX
-    window.location.href = '<?php echo home_url(); ?>/?bassmah_action=my_reports';
+    // Redirect to the My Reports homepage page
+    window.location.href = '<?php echo home_url('/'); ?>';
 }
 
 function exportReports() {

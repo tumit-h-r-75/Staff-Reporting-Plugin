@@ -245,8 +245,13 @@ class Bassmah_Staff_Reports_Salary {
     }
 
     /**
+     * Generate default working days for a month when no configuration exists
+     *
+     * @param string $month
+     * @return array
+     */
+    private function generate_default_working_days($month) {
         $working_days = array();
-        
         $start_date = new DateTime($month . '-01');
         $end_date = new DateTime(date('Y-m-t', strtotime($month . '-01')));
 
@@ -256,7 +261,7 @@ class Bassmah_Staff_Reports_Salary {
         while ($start_date <= $end_date) {
             $day_of_week = $start_date->format('N'); // 1 (Monday) to 7 (Sunday)
             $current_date = $start_date->format('Y-m-d');
-            
+
             // Include Monday to Friday that are not holidays
             if ($day_of_week <= 5 && !in_array($current_date, $holidays)) {
                 $working_days[] = $current_date;

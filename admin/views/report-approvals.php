@@ -496,7 +496,7 @@ global $wpdb;
             const submitDate = new Date(report.report_date);
             const submitTime = new Date(report.submitted_at);
             
-            const formattedDate = submitDate.toLocaleDateString('<?php echo esc_js(get_locale()); ?>');
+            const formattedDate = submitDate.toLocaleDateString('en-US');
             const formattedTime = submitTime.toLocaleTimeString('<?php echo esc_js(get_locale()); ?>', {hour: '2-digit', minute:'2-digit'});
 
             const taskCount = report.tasks ? report.tasks.length : 0;

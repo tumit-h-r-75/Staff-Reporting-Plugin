@@ -91,7 +91,7 @@ class Bassmah_Staff_Reports_Public {
                 'rest_url' => rest_url('bassmah/v1/'),
                 'nonce' => wp_create_nonce('wp_rest'),
                 'today_date' => current_time('Y-m-d'),
-                'report_form_url' => home_url('/staff-report-form/'),
+                'report_form_url' => home_url('/report/'),
                 'strings' => array(
                     'confirm_delete' => __('Are you sure you want to delete this?', 'bassmah-staff-reports'),
                     'loading' => __('Loading...', 'bassmah-staff-reports'),
