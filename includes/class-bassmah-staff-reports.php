@@ -161,6 +161,10 @@ if (!class_exists('Bassmah_Staff_Reports')) {
         $this->loader->add_action( 'init', $plugin_public, 'register_shortcodes' );
         $this->loader->add_action( 'init', $plugin_public, 'register_ajax_actions' );
         
+        // Email notification hooks for report approvals
+        $this->loader->add_action( 'bassmah_report_approved', $plugin_public, 'notify_staff_report_approved', 10, 3 );
+        $this->loader->add_action( 'bassmah_report_rejected', $plugin_public, 'notify_staff_report_rejected', 10, 3 );
+        
         // Favicon functionality removed to prevent 404 errors
     }
 

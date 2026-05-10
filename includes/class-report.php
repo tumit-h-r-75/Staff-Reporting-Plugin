@@ -619,4 +619,56 @@ class Bassmah_Staff_Reports_Report {
 
         wp_mail($user->user_email, $subject, $message);
     }
+
+    /**
+     * Get manager statistics for reports
+     *
+     * @since    1.0.0
+     * @param    array    $args    Query arguments
+     * @return   array
+     */
+    public function get_manager_statistics($args = array()) {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'staff_reports';
+        
+        $where = "WHERE 1=1";
+        $params = array();
+        
+        if (!empty($args['date_from'])) {
+            $where .= " AND report_date >= %s";
+            $params[] = $args['date_from'];
+        }
+        
+        if (!empty($args['date_to'])) {
+            $where .= " AND report_date <= %s";
+            $params[] = $args['date_to'];
+        }
+        
+        if (!empty($args['user_id'])) {
+            $where .= " AND user_id = %d";
+            $params[] = $args['user_id'];
+        }
+        
+        $sql = "SELECT
+            COUNT(*) as total_reports,
+            SUM(status='submitted') as submitted,
+            SUM(status='approved') as approved,
+            SUM(status='rejected') as rejected,
+            SUM(status='submitted') as pending
+            FROM {$table_name} $where";
+            
+        if ($params) {
+            $sql = $wpdb->prepare($sql, $params);
+        }
+        
+        $result = $wpdb->get_row($sql, ARRAY_A);
+        
+        return $result ?: array(
+            'total_reports' => 0,
+            'submitted' => 0,
+            'approved' => 0,
+            'rejected' => 0,
+            'pending' => 0
+        );
+    }
 }

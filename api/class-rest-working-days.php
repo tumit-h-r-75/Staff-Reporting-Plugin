@@ -141,7 +141,7 @@ if (!class_exists('Bassmah_Staff_Reports_REST_Working_Days')) {
             if (is_wp_error($login_check)) {
                 return $login_check;
             }
-            return current_user_can('bassmah_manage_settings');
+            return current_user_can('bassmah_manage_working_days');
         }
 
         /**

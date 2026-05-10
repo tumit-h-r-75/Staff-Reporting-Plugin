@@ -374,7 +374,7 @@ class Bassmah_Staff_Reports_Database_Manager {
      * @return   array
      */
     public function get_working_days($args = array()) {
-        $table_name = $this->prefix . 'staff_working_days';
+        $table_name = $this->prefix . 'working_days';
         
         $where = "1=1";
         $values = array();
@@ -411,7 +411,7 @@ class Bassmah_Staff_Reports_Database_Manager {
      * @return   object|null
      */
     public function get_working_day($id) {
-        $table_name = $this->prefix . 'staff_working_days';
+        $table_name = $this->prefix . 'working_days';
         return $this->wpdb->get_row($this->wpdb->prepare(
             "SELECT * FROM {$table_name} WHERE id = %d",
             $id
@@ -426,7 +426,7 @@ class Bassmah_Staff_Reports_Database_Manager {
      * @return   int|WP_Error
      */
     public function create_working_day($data) {
-        $table_name = $this->prefix . 'staff_working_days';
+        $table_name = $this->prefix . 'working_days';
         
         $result = $this->wpdb->insert($table_name, $data);
         
@@ -446,7 +446,7 @@ class Bassmah_Staff_Reports_Database_Manager {
      * @return   bool|WP_Error
      */
     public function update_working_day($id, $data) {
-        $table_name = $this->prefix . 'staff_working_days';
+        $table_name = $this->prefix . 'working_days';
         
         $result = $this->wpdb->update($table_name, $data, array('id' => $id));
         
@@ -465,7 +465,7 @@ class Bassmah_Staff_Reports_Database_Manager {
      * @return   bool|WP_Error
      */
     public function delete_working_day($id) {
-        $table_name = $this->prefix . 'staff_working_days';
+        $table_name = $this->prefix . 'working_days';
         
         $result = $this->wpdb->delete($table_name, array('id' => $id));
         

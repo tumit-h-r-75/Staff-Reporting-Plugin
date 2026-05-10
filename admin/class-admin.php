@@ -74,6 +74,8 @@ class Bassmah_Staff_Reports_Admin {
         wp_localize_script($this->plugin_name, 'bassmah_admin', array(
             'ajax_url' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('bassmah_admin_nonce'),
+            'rest_url' => rest_url('bassmah/v1/'),
+            'rest_nonce' => wp_create_nonce('wp_rest'),
             'strings' => array(
                 'confirm_delete' => __('Are you sure you want to delete this item?', 'bassmah-staff-reports'),
                 'no_reports_found' => __('No reports found for the selected criteria.', 'bassmah-staff-reports'),

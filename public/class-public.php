@@ -742,4 +742,74 @@ class Bassmah_Staff_Reports_Public {
         $salary_calculator = new Bassmah_Staff_Reports_Salary_Calculator();
         $salary_calculator::export_salary_csv($user_id, $from_date, $to_date);
     }
+
+    /**
+     * Notify staff when report is approved
+     *
+     * @since    1.0.0
+     * @param    int    $report_id    Report ID
+     * @param    int    $manager_id   Manager ID
+     * @param    string $comment      Manager comment
+     */
+    public function notify_staff_report_approved($report_id, $manager_id, $comment) {
+        $report = get_post($report_id);
+        if (!$report) return;
+
+        $user = get_userdata($report->post_author);
+        if (!$user) return;
+
+        $manager = get_userdata($manager_id);
+        $manager_name = $manager ? $manager->display_name : __('Manager', 'bassmah-staff-reports');
+
+        $subject = __('Your Report Has Been Approved', 'bassmah-staff-reports');
+        
+        $message = sprintf(
+            __('Hello %s,', 'bassmah-staff-reports') . "\n\n" .
+            __('Your report for %s has been approved by %s.', 'bassmah-staff-reports') . "\n\n" .
+            __('Comment: %s', 'bassmah-staff-reports') . "\n\n" .
+            __('View Report: %s', 'bassmah-staff-reports'),
+            $user->display_name,
+            get_the_date(get_option('date_format'), $report_id),
+            $manager_name,
+            $comment,
+            admin_url('admin.php?page=bassmah-my-reports&view=report&id=' . $report_id)
+        );
+
+        wp_mail($user->user_email, $subject, $message);
+    }
+
+    /**
+     * Notify staff when report is rejected
+     *
+     * @since    1.0.0
+     * @param    int    $report_id    Report ID
+     * @param    int    $manager_id   Manager ID
+     * @param    string $reason       Rejection reason
+     */
+    public function notify_staff_report_rejected($report_id, $manager_id, $reason) {
+        $report = get_post($report_id);
+        if (!$report) return;
+
+        $user = get_userdata($report->post_author);
+        if (!$user) return;
+
+        $manager = get_userdata($manager_id);
+        $manager_name = $manager ? $manager->display_name : __('Manager', 'bassmah-staff-reports');
+
+        $subject = __('Your Report Has Been Rejected', 'bassmah-staff-reports');
+        
+        $message = sprintf(
+            __('Hello %s,', 'bassmah-staff-reports') . "\n\n" .
+            __('Your report for %s has been rejected by %s.', 'bassmah-staff-reports') . "\n\n" .
+            __('Reason: %s', 'bassmah-staff-reports') . "\n\n" .
+            __('Please review and resubmit your report. View Report: %s', 'bassmah-staff-reports'),
+            $user->display_name,
+            get_the_date(get_option('date_format'), $report_id),
+            $manager_name,
+            $reason,
+            admin_url('admin.php?page=bassmah-my-reports&view=report&id=' . $report_id)
+        );
+
+        wp_mail($user->user_email, $subject, $message);
+    }
 }

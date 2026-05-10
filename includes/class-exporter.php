@@ -113,13 +113,10 @@ if (!class_exists('Bassmah_Staff_Reports_Exporter')) {
         public function export_reports_to_excel($filters = array()) {
             global $wpdb;
             
-            // Check if PhpSpreadsheet is available
+            // Check if PhpSpreadsheet is available, fall back to CSV if not
             if (!class_exists('PhpOffice\PhpSpreadsheet\Spreadsheet')) {
-                return new WP_Error(
-                    'missing_library',
-                    __('PhpSpreadsheet library is not installed. Please run: composer require phpoffice/phpspreadsheet', 'bassmah-staff-reports'),
-                    array('status' => 500)
-                );
+                // Fall back to CSV export
+                return $this->export_reports_to_csv($filters);
             }
             
             $table_reports = $wpdb->prefix . 'staff_reports';

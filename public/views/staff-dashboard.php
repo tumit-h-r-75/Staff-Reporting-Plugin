@@ -696,18 +696,15 @@ function hideReportForm() {
 }
 
 function viewReport(reportId) {
-    // Implementation to view individual report
-    console.log('View report:', reportId);
+    window.location.href = '<?php echo home_url('/my-reports/'); ?>?report_id=' + reportId;
 }
 
 function viewAllReports() {
-    // Redirect to the My Reports homepage page
-    window.location.href = '<?php echo home_url('/'); ?>';
+    window.location.href = '<?php echo home_url('/my-reports/'); ?>';
 }
 
 function exportReports() {
-    // Implementation to export reports
-    console.log('Export reports');
+    window.location.href = bassmah_public.rest_url + 'reports/export?format=csv';
 }
 
 function exportSalaryHistory() {
