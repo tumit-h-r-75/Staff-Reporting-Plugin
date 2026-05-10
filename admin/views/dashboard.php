@@ -225,6 +225,86 @@ function viewReportDetails(reportId) {
 function hideReportDetails() {
     document.getElementById('bassmah-report-details-modal').style.display = 'none';
 }
+
+function approveReport(reportId) {
+    if (!confirm('Are you sure you want to approve this report?')) return;
+
+    var btn = event.target;
+    btn.disabled = true;
+    btn.textContent = 'Approving...';
+
+    fetch(ajaxurl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+            action: 'bassmah_admin_ajax',
+            nonce: '<?php echo wp_create_nonce('bassmah_admin_nonce'); ?>',
+            action_type: 'update_report_status',
+            report_id: reportId,
+            status: 'approve',
+            comment: ''
+        }).toString()
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.success) {
+            document.getElementById('bassmah-report-details-modal').style.display = 'none';
+            alert('Report approved successfully!');
+            location.reload();
+        } else {
+            alert('Error: ' + (data.data || 'Could not approve report.'));
+            btn.disabled = false;
+            btn.textContent = 'Approve';
+        }
+    })
+    .catch(function() {
+        alert('Network error. Please try again.');
+        btn.disabled = false;
+        btn.textContent = 'Approve';
+    });
+}
+
+function rejectReport(reportId) {
+    var reason = prompt('Please enter rejection reason (required):');
+    if (!reason || reason.trim() === '') {
+        alert('Rejection reason is required.');
+        return;
+    }
+
+    var btn = event.target;
+    btn.disabled = true;
+    btn.textContent = 'Rejecting...';
+
+    fetch(ajaxurl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+            action: 'bassmah_admin_ajax',
+            nonce: '<?php echo wp_create_nonce('bassmah_admin_nonce'); ?>',
+            action_type: 'update_report_status',
+            report_id: reportId,
+            status: 'reject',
+            comment: reason.trim()
+        }).toString()
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.success) {
+            document.getElementById('bassmah-report-details-modal').style.display = 'none';
+            alert('Report rejected successfully!');
+            location.reload();
+        } else {
+            alert('Error: ' + (data.data || 'Could not reject report.'));
+            btn.disabled = false;
+            btn.textContent = 'Reject';
+        }
+    })
+    .catch(function() {
+        alert('Network error. Please try again.');
+        btn.disabled = false;
+        btn.textContent = 'Reject';
+    });
+}
 </script>
 
 <style>
