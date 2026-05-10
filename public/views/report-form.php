@@ -16,6 +16,21 @@ $current_user = wp_get_current_user();
 $task_categories = get_option('bassmah_task_categories', array());
 $task_statuses = get_option('bassmah_task_statuses', array());
 
+// Enqueue public scripts to ensure bassmah_public is available
+wp_enqueue_script('bassmah-public-scripts', plugin_dir_url(__FILE__) . '../js/public-scripts.js', array('jquery'), BASSMAH_STAFF_REPORTS_VERSION, true);
+wp_localize_script('bassmah-public-scripts', 'bassmah_public', array(
+    'ajaxurl' => admin_url('admin-ajax.php'),
+    'rest_url' => rest_url('bassmah/v1/'),
+    'nonce' => wp_create_nonce('wp_rest'),
+    'user_id' => $current_user->ID,
+    'strings' => array(
+        'loading' => __('Loading...', 'bassmah-staff-reports'),
+        'error_occurred' => __('An error occurred. Please try again.', 'bassmah-staff-reports'),
+        'success' => __('Success!', 'bassmah-staff-reports'),
+        'report_submitted' => __('Report submitted successfully!', 'bassmah-staff-reports')
+    )
+));
+
 // Check for duplicate submission
 if (!class_exists('Bassmah_Staff_Reports_Duplicate_Check')) {
     require_once BASSMAH_STAFF_REPORTS_PLUGIN_DIR . 'includes/class-duplicate-check.php';

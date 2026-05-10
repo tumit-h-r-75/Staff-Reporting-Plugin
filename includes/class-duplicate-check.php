@@ -23,7 +23,7 @@ if (!class_exists('Bassmah_Staff_Reports_Duplicate_Check')) {
             global $wpdb;
             
             $table_name = $wpdb->prefix . 'staff_reports';
-            $today = date('Y-m-d');
+            $today = current_time('Y-m-d');
             
             $count = $wpdb->get_var($wpdb->prepare(
                 "SELECT COUNT(*) FROM {$table_name} 
@@ -46,7 +46,7 @@ if (!class_exists('Bassmah_Staff_Reports_Duplicate_Check')) {
             global $wpdb;
             
             $table_name = $wpdb->prefix . 'staff_reports';
-            $today = date('Y-m-d');
+            $today = current_time('Y-m-d');
             
             return $wpdb->get_row($wpdb->prepare(
                 "SELECT * FROM {$table_name} 

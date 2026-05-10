@@ -173,11 +173,11 @@ $total_pages = ceil($total_reports / $per_page);
                             </td>
                             <td>
                                 <div class="bassmah-action-buttons">
-                                    <button class="button button-small" onclick="viewReportDetails(<?php echo $report->id; ?>)">
+                                    <button class="button button-small" onclick="viewReportDetails(<?php echo isset($report->id) ? intval($report->id) : 'null'; ?>)">
                                         <?php _e('View', 'bassmah-staff-reports'); ?>
                                     </button>
                                     <?php if ($report->status === 'submitted' && $report->report_date === date('Y-m-d')): ?>
-                                        <button class="button button-small" onclick="editReport(<?php echo $report->id; ?>)">
+                                        <button class="button button-small" onclick="editReport(<?php echo isset($report->id) ? intval($report->id) : 'null'; ?>)">
                                             <?php _e('Edit', 'bassmah-staff-reports'); ?>
                                         </button>
                                     <?php endif; ?>
@@ -514,8 +514,13 @@ function hideReportDetails() {
 }
 
 function editReport(reportId) {
-    // Implementation for editing report
-    console.log('Edit report:', reportId);
+    if (!reportId) {
+        console.error('Report ID is undefined');
+        return;
+    }
+    
+    // Redirect to report form with edit parameter
+    window.location.href = bassmah_public.report_form_url + '?edit=' + reportId;
 }
 
 function exportReports() {

@@ -63,7 +63,7 @@ class Bassmah_Staff_Reports_Report {
             );
         }
 
-        $required_fields = array('task_category', 'task_description', 'completion_status', 'next_action');
+        $required_fields = array('task_description', 'completion_status', 'next_action');
         foreach ($data['tasks'] as $index => $task) {
             if (!is_array($task)) {
                 return new WP_Error(

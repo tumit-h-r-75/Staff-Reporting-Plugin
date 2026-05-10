@@ -34,16 +34,23 @@ jQuery(document).ready(function($) {
         
         // Submit via REST API
         $.ajax({
-            url: bassmah_public.rest_url + 'v1/reports',
+            url: bassmah_public.rest_url + 'reports',
             type: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({
                 tasks: tasks,
                 status: 'submitted',
-                report_date: new Date().toISOString().split('T')[0]
+                report_date: bassmah_public.today_date
             }),
             beforeSend: function(xhr) {
+                // Add WordPress nonce for fallback
                 xhr.setRequestHeader('X-WP-Nonce', bassmah_public.nonce);
+                
+                // Add JWT token if available
+                var jwtToken = localStorage.getItem('bassmah_jwt_token');
+                if (jwtToken) {
+                    xhr.setRequestHeader('Authorization', 'Bearer ' + jwtToken);
+                }
             },
             dataType: 'json',
             success: function(response) {
@@ -197,7 +204,7 @@ jQuery(document).ready(function($) {
         $row.find('select').prop('selectedIndex', 0);
         $row.find('input[type="radio"]').prop('checked', false);
         $row.find('input[type="text"], textarea').val('');
-        $row.find('input[name="completion_status"][value="completed"]').prop('checked', true);
+        $row.find('input[type="radio"][value="completed"]').prop('checked', true);
     }
 
     function updateTaskNumbers() {
@@ -369,14 +376,14 @@ jQuery(document).ready(function($) {
     }
 
     function formatCurrency(amount, currency) {
-        return new Intl.NumberFormat('en-CA', {
+        return new Intl.NumberFormat('en-US', {
             style: 'currency',
             currency: currency || 'CAD'
         }).format(amount);
     }
 
     function formatDate(dateString) {
-        return new Date(dateString).toLocaleDateString('en-CA', {
+        return new Date(dateString).toLocaleDateString('en-US', {
             year: 'numeric',
             month: 'long',
             day: 'numeric'
@@ -384,7 +391,7 @@ jQuery(document).ready(function($) {
     }
 
     function formatDateTime(dateString) {
-        return new Date(dateString).toLocaleString('en-CA', {
+        return new Date(dateString).toLocaleString('en-US', {
             year: 'numeric',
             month: 'short',
             day: 'numeric',

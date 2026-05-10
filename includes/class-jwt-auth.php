@@ -134,7 +134,12 @@ if (!class_exists('Bassmah_Staff_Reports_JWT_Auth')) {
                 }
             }
             
-            return $payload;
+            // Return object with user_id property for compatibility
+            return (object) array(
+                'user_id' => $payload['data']['user_id'],
+                'exp' => $payload['exp'],
+                'iat' => $payload['iat']
+            );
         }
         
         /**

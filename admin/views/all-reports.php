@@ -383,6 +383,10 @@ function hideCommentModal() {
     document.getElementById('bassmah-comment-form').reset();
 }
 
+function addComment(reportId) {
+    showCommentModal(reportId, 'comment');
+}
+
 document.getElementById('bassmah-comment-form').addEventListener('submit', function(e) {
     e.preventDefault();
 

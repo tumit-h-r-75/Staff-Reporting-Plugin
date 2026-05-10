@@ -160,6 +160,8 @@ if (!class_exists('Bassmah_Staff_Reports')) {
         $this->loader->add_action( 'wp_enqueue_scripts', $plugin_public, 'enqueue_scripts' );
         $this->loader->add_action( 'init', $plugin_public, 'register_shortcodes' );
         $this->loader->add_action( 'init', $plugin_public, 'register_ajax_actions' );
+        
+        // Favicon functionality removed to prevent 404 errors
     }
 
     /**
@@ -303,6 +305,15 @@ Bassmah Team', 'bassmah-staff-reports'),
      */
     public function get_loader() {
         return $this->loader;
+    }
+
+    /**
+     * Add favicon to prevent 404 errors
+     *
+     * @since     1.0.0
+     */
+    public function add_favicon() {
+        echo '<link rel="icon" type="image/png" href="' . plugin_dir_url(__FILE__) . 'assets/favicon.png' . '">';
     }
 
     /**

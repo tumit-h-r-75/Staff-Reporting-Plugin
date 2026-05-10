@@ -19,6 +19,39 @@ if (!defined('WPINC')) {
     die;
 }
 
+// Force HTTPS for all assets to prevent mixed content issues
+if (!function_exists('bassmah_force_https')) {
+    function bassmah_force_https($url) {
+        if (is_ssl() && strpos($url, 'http://') === 0) {
+            return str_replace('http://', 'https://', $url);
+        }
+        return $url;
+    }
+}
+
+// Hook into WordPress filters to force HTTPS for assets
+if (!function_exists('bassmah_setup_https_filters')) {
+    function bassmah_setup_https_filters() {
+        if (is_ssl()) {
+            add_filter('style_loader_src', 'bassmah_force_https');
+            add_filter('script_loader_src', 'bassmah_force_https');
+            add_filter('template_directory_uri', 'bassmah_force_https');
+            add_filter('stylesheet_directory_uri', 'bassmah_force_https');
+            add_filter('plugins_url', 'bassmah_force_https');
+            add_filter('upload_dir', function($uploads) {
+                if (isset($uploads['baseurl']) && strpos($uploads['baseurl'], 'http://') === 0) {
+                    $uploads['baseurl'] = str_replace('http://', 'https://', $uploads['baseurl']);
+                }
+                if (isset($uploads['url']) && strpos($uploads['url'], 'http://') === 0) {
+                    $uploads['url'] = str_replace('http://', 'https://', $uploads['url']);
+                }
+                return $uploads;
+            });
+        }
+    }
+    add_action('plugins_loaded', 'bassmah_setup_https_filters');
+}
+
 // Define plugin constants
 if (!defined('BASSMAH_STAFF_REPORTS_VERSION')) {
     define('BASSMAH_STAFF_REPORTS_VERSION', '1.0.1');

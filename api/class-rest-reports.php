@@ -6,6 +6,9 @@
  * @package    Bassmah_Staff_Reports
  * @author     Tumit <tumit@bassmah.ca>
  */
+// Include JWT authentication class
+require_once plugin_dir_path(__FILE__) . '../includes/class-jwt-auth.php';
+
 if (!class_exists('Bassmah_Staff_Reports_REST_Reports')) {
     class Bassmah_Staff_Reports_REST_Reports {
 
@@ -452,12 +455,45 @@ if (!class_exists('Bassmah_Staff_Reports_REST_Reports')) {
      * @return   WP_Error|bool
      */
     public function create_report_permissions_check($request) {
+        // Check JWT token first
+        $jwt_auth = new Bassmah_Staff_Reports_JWT_Auth();
+        $token = $request->get_header('authorization');
+        
+        if ($token && strpos($token, 'Bearer ') === 0) {
+            $token = substr($token, 7);
+            $token_validation = $jwt_auth->validate_token($token);
+            
+            if (!is_wp_error($token_validation)) {
+                // Set user from JWT token
+                wp_set_current_user($token_validation->user_id);
+                $can_submit = current_user_can('bassmah_submit_reports');
+                if (!$can_submit) {
+                    return new WP_Error(
+                        'insufficient_permissions',
+                        __('You do not have permission to submit reports.', 'bassmah-staff-reports'),
+                        array('status' => 403)
+                    );
+                }
+                return true;
+            }
+        }
+        
+        // Fallback to WordPress session authentication
         $login_check = Bassmah_Staff_Reports_Roles::require_login();
         if (is_wp_error($login_check)) {
             return $login_check;
         }
 
-        return current_user_can('bassmah_submit_reports');
+        $can_submit = current_user_can('bassmah_submit_reports');
+        if (!$can_submit) {
+            return new WP_Error(
+                'insufficient_permissions',
+                __('You do not have permission to submit reports.', 'bassmah-staff-reports'),
+                array('status' => 403)
+            );
+        }
+
+        return true;
     }
 
     /**
