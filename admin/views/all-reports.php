@@ -12,6 +12,9 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+// Define ajaxurl for admin context
+$ajaxurl = admin_url('admin-ajax.php');
+
 global $wpdb;
 
 // Get filter parameters
@@ -308,7 +311,7 @@ $users = get_users(array(
 <script>
 function exportReports() {
     var format = document.getElementById('export-format').value;
-    var url = bassmah_admin.rest_url + 'reports/export?format=' + format;
+    var url = '/wp-admin/admin-ajax.php?action=bassmah_admin_ajax&action_type=export_manager_reports&nonce=' + bassmah_admin.nonce;
     
     // Add current filters to URL
     var userId = document.getElementById('user_id') ? document.getElementById('user_id').value : '';
@@ -320,6 +323,7 @@ function exportReports() {
     if (dateFrom) url += '&date_from=' + encodeURIComponent(dateFrom);
     if (dateTo) url += '&date_to=' + encodeURIComponent(dateTo);
     if (status) url += '&status=' + encodeURIComponent(status);
+    if (format) url += '&format=' + encodeURIComponent(format);
     
     window.location.href = url;
 }

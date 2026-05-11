@@ -60,7 +60,7 @@ $total_pages = ceil($total_reports / $per_page);
     <!-- Filters -->
     <div class="bassmah-filters-card">
         <h3><?php _e('Filter Reports', 'bassmah-staff-reports'); ?></h3>
-        <form method="get" class="bassmah-filter-form">
+        <form method="get" action="<?php echo esc_url(get_permalink()); ?>" class="bassmah-filter-form">
             <input type="hidden" name="bassmah_action" value="my_reports">
             
             <div class="bassmah-filter-row">
@@ -485,7 +485,7 @@ function viewReportDetails(reportId) {
     modal.style.display = 'block';
     
     // Load report details via AJAX
-    fetch(bassmah_public.ajax_url, {
+    fetch(bassmah_public.ajaxurl, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
