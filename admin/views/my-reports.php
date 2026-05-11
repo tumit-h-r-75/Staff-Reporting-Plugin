@@ -15,47 +15,6 @@ if (!Bassmah_Staff_Reports_Roles::can_view_own_reports()) {
 
 global $wpdb;
 
-// Handle AJAX request for report details
-if (isset($_REQUEST['action']) && $_REQUEST['action'] === 'bassmah_get_my_report_details') {
-    check_ajax_referer('bassmah_my_reports_nonce', 'nonce');
-    
-    $report_id = intval($_REQUEST['report_id']);
-    
-    require_once BASSMAH_STAFF_REPORTS_PLUGIN_DIR . 'includes/class-report.php';
-    $report_class = new Bassmah_Staff_Reports_Report();
-    $report = $report_class->get_report($report_id);
-    
-    if (!$report || $report->user_id !== get_current_user_id()) {
-        wp_send_json_error(__('Report not found.', 'bassmah-staff-reports'));
-    }
-    
-    ob_start();
-    ?>
-    <div class="bassmah-report-details">
-        <h4><?php echo esc_html($report->report_date); ?></h4>
-        
-        <?php if (!empty($report->tasks)): ?>
-            <h5><?php _e('Tasks:', 'bassmah-staff-reports'); ?></h5>
-            <?php foreach ($report->tasks as $task): ?>
-                <div class="bassmah-task-item">
-                    <strong><?php echo esc_html($task['task_category']); ?></strong><br>
-                    <?php echo esc_html($task['task_description']); ?><br>
-                    <em><?php echo esc_html($task['next_action']); ?></em>
-                </div>
-            <?php endforeach; ?>
-        <?php endif; ?>
-        
-        <?php if (!empty($report->manager_comment)): ?>
-            <h5><?php _e('Manager Comment:', 'bassmah-staff-reports'); ?></h5>
-            <p><?php echo esc_html($report->manager_comment); ?></p>
-        <?php endif; ?>
-    </div>
-    <?php
-    $html = ob_get_clean();
-    
-    wp_send_json_success($html);
-}
-
 // Get user's reports
 $reports_table = $wpdb->prefix . 'staff_reports';
 $user_id = get_current_user_id();
@@ -206,26 +165,11 @@ window.onclick = function(event) {
     border-radius: 8px;
     max-width: 800px;
     position: relative;
-}
+    }
 
-.bassmah-large-modal .bassmah-modal-content {
-    max-width: 900px;
-}
-
-.bassmah-modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
-}
-
-.bassmah-modal-close {
-    background: transparent;
-    border: none;
-    font-size: 24px;
-    line-height: 1;
-    cursor: pointer;
-}
+    .bassmah-large-modal {
+        max-width: 900px;
+    }
 
 .bassmah-modal-body {
     max-height: 70vh;

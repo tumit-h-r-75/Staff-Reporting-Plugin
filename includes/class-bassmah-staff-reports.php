@@ -144,6 +144,7 @@ if (!class_exists('Bassmah_Staff_Reports')) {
         $this->loader->add_action( 'admin_menu', $plugin_admin, 'add_plugin_admin_menu' );
         $this->loader->add_action( 'admin_init', $plugin_admin, 'register_settings' );
         $this->loader->add_action( 'wp_ajax_bassmah_admin_ajax', $plugin_admin, 'handle_ajax_requests' );
+        $this->loader->add_action( 'wp_ajax_bassmah_get_my_report_details', $plugin_admin, 'handle_my_report_details' );
     }
 
     /**

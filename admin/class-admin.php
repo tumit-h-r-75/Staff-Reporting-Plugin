@@ -331,6 +331,52 @@ class Bassmah_Staff_Reports_Admin {
     }
 
     /**
+     * Handle AJAX request for my report details
+     *
+     * @since    1.0.0
+     */
+    public function handle_my_report_details() {
+        check_ajax_referer('bassmah_my_reports_nonce', 'nonce');
+
+        $report_id = intval($_REQUEST['report_id'] ?? 0);
+        if (!$report_id) {
+            wp_send_json_error(__('Invalid report ID.', 'bassmah-staff-reports'));
+        }
+
+        require_once BASSMAH_STAFF_REPORTS_PLUGIN_DIR . 'includes/class-report.php';
+        $report_class = new Bassmah_Staff_Reports_Report();
+        $report = $report_class->get_report($report_id);
+
+        if (!$report || $report->user_id !== get_current_user_id()) {
+            wp_send_json_error(__('Report not found.', 'bassmah-staff-reports'));
+        }
+
+        ob_start();
+        ?>
+        <div class="bassmah-report-details">
+            <h4><?php echo esc_html($report->report_date); ?></h4>
+            <?php if (!empty($report->tasks)): ?>
+                <h5><?php _e('Tasks:', 'bassmah-staff-reports'); ?></h5>
+                <?php foreach ($report->tasks as $task): ?>
+                    <div class="bassmah-task-item">
+                        <strong><?php echo esc_html($task['task_category']); ?></strong><br>
+                        <?php echo esc_html($task['task_description']); ?><br>
+                        <em><?php echo esc_html($task['next_action']); ?></em>
+                    </div>
+                <?php endforeach; ?>
+            <?php endif; ?>
+            <?php if (!empty($report->manager_comment)): ?>
+                <h5><?php _e('Manager Comment:', 'bassmah-staff-reports'); ?></h5>
+                <p><?php echo esc_html($report->manager_comment); ?></p>
+            <?php endif; ?>
+        </div>
+        <?php
+        $html = ob_get_clean();
+
+        wp_send_json_success($html);
+    }
+
+    /**
      * Export reports to CSV
      *
      * @since    1.0.0

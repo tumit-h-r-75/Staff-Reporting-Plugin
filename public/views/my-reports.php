@@ -478,18 +478,26 @@ $total_pages = ceil($total_reports / $per_page);
 
 <script>
 function viewReportDetails(reportId) {
-    // Show loading
     const modal = document.getElementById('bassmah-report-details-modal');
     const content = document.getElementById('bassmah-report-details-content');
     content.innerHTML = '<div class="bassmah-loading-container"><span class="loading loading-infinity loading-xl"></span><span class="bassmah-loading-text"><?php _e('Loading...', 'bassmah-staff-reports'); ?></span></div>';
     modal.style.display = 'block';
-    
-    // Load report details via AJAX
+
+    // JWT token নাও localStorage থেকে
+    var jwtToken = localStorage.getItem('bassmah_jwt_token');
+
+    var headers = {
+        'Content-Type': 'application/x-www-form-urlencoded',
+    };
+
+    // Token থাকলে Authorization header যোগ করো
+    if (jwtToken) {
+        headers['Authorization'] = 'Bearer ' + jwtToken;
+    }
+
     fetch(bassmah_public.ajaxurl, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
+        headers: headers,
         body: new URLSearchParams({
             action: 'bassmah_get_report_details',
             nonce: bassmah_public.nonce,
