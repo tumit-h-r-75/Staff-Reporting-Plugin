@@ -134,6 +134,9 @@ class Bassmah_Staff_Reports_Public {
         add_action('wp_ajax_nopriv_bassmah_export_salary_history', array($this, 'handle_ajax_requests'));
         add_action('wp_ajax_bassmah_frontend_ajax', array($this, 'handle_ajax_requests'));
         add_action('wp_ajax_nopriv_bassmah_frontend_ajax', array($this, 'handle_ajax_requests'));
+        
+        // Heartbeat filter for real-time updates
+        add_filter('heartbeat_received', array($this, 'handle_heartbeat'), 10, 2);
     }
 
     /**
@@ -812,5 +815,38 @@ class Bassmah_Staff_Reports_Public {
         );
 
         wp_mail($user->user_email, $subject, $message);
+    }
+
+    /**
+     * Handle WordPress heartbeat for real-time updates
+     *
+     * @since    1.0.0
+     * @param    array    $response    Heartbeat response
+     * @param    array    $data        Heartbeat data
+     * @return   array
+     */
+    public function handle_heartbeat($response, $data) {
+        if (!isset($data['bassmah_check_updates'])) {
+            return $response;
+        }
+        if (!is_user_logged_in()) {
+            return $response;
+        }
+        
+        $last_check = intval($data['bassmah_check_updates']['last_check'] ?? 0);
+        $last_check_time = $last_check > 0 ? date('Y-m-d H:i:s', $last_check / 1000) : date('Y-m-d H:i:s', strtotime('-1 minute'));
+        
+        global $wpdb;
+        $table = $wpdb->prefix . 'staff_reports';
+        $recent = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$table} WHERE updated_at > %s",
+            $last_check_time
+        ));
+        
+        if ($recent > 0) {
+            $response['bassmah_report_updates'] = true;
+        }
+        
+        return $response;
     }
 }

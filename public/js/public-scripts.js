@@ -62,6 +62,13 @@ jQuery(document).ready(function($) {
                             // Reset first task row
                             resetTaskRow($('.bassmah-task-row:first'));
                             // Clear any saved draft
+                            
+                            // Trigger immediate update everywhere
+                            jQuery(document).trigger('bassmah_report_submitted');
+                            // Force heartbeat immediately
+                            if (typeof wp !== 'undefined' && wp.heartbeat) {
+                                wp.heartbeat.connectNow();
+                            }
                             localStorage.removeItem('bassmah_report_draft');
                         } else {
                             showNotice(bassmah_public.strings.error_occurred, 'error');
@@ -467,5 +474,22 @@ jQuery(document).ready(function($) {
 
     // Initialize
     restoreDraft();
+
+// Real-time sync via WordPress Heartbeat
+jQuery(document).on('heartbeat-send', function(e, data) {
+    data['bassmah_check_updates'] = {
+        last_check: localStorage.getItem('bassmah_last_check') || 0
+    };
+});
+
+jQuery(document).on('heartbeat-tick', function(e, data) {
+    if (data['bassmah_report_updates']) {
+        localStorage.setItem('bassmah_last_check', Date.now());
+        // Reports page refresh
+        if (document.querySelector('.bassmah-reports-table')) {
+            location.reload();
+        }
+    }
+});
     updateTaskNumbers();
 });
